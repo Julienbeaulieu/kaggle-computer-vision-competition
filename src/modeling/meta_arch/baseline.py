@@ -15,13 +15,12 @@ class BaselineModel(nn.Module):
 
     def __init__(self, model_cfg: CfgNode):
         super(BaselineModel, self).__init__()
-
-        self.head = build_head(model_cfg.HEAD)
         self.backbone = build_backbone(model_cfg.BACKBONE)
+        self.head = build_head(model_cfg.HEAD)
         self.heads_dims = model_cfg.HEAD.OUTPUT_DIMS
 
     def forward(self, x):
         x = self.backbone(x)
-        x = self.heads_dims(x)
-        grapheme_logits, vowel_logits, consonant_logits = torch.split(x, self.heads_dims)
+        x = self.head(x)
+        grapheme_logits, vowel_logits, consonant_logits = torch.split(x, self.heads_dims, dim=1)
         return grapheme_logits, vowel_logits, consonant_logits

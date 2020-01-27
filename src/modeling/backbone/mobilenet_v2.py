@@ -153,5 +153,5 @@ def build_mobilenet_v2_backbone(backbone_cfg: CfgNode, **kwargs) -> nn.Module:
     if backbone_cfg.get('PRETRAINED_PATH'):
         pretrained_path = backbone_cfg['PRETRAINED_PATH']
         state_dict = torch.load(pretrained_path, map_location='cpu')
-        model.load_state_dict(state_dict)
+        model.load_state_dict(state_dict, strict=False)
     return model

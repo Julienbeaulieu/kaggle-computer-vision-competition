@@ -3,10 +3,10 @@ import torch.nn.functional as F
 from typing import Union
 
 ACTIVATION_FN = {
-    'RELU': F.relu,
-    'RELU6': F.relu6,
-    'ELU': F.elu,
-    'LEAKY_RELU': F.leaky_relu,
+    'relu': F.relu,
+    'relu6': F.relu6,
+    'elu': F.elu,
+    'leaky_relu': F.leaky_relu,
     None: None
 }
 
@@ -35,7 +35,7 @@ class LinearLayer(nn.Module):
         if self.bn is not None:
             x = self.bn(x)
         if self.activation_fn is not None:
-            x = self.activation_fn(x)
+            x = self.activation_fn(x, inplace=True)
         if self.dropout is not None:
             x = self.dropout(x)
         return x
