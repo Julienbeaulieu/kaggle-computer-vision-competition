@@ -28,6 +28,6 @@ DATASET:
   LABELS_WEIGHTS_PATH: ""
 MODEL:
   BACKBONE:
-    TYPE: mobilenetV2
+    NAME: mobilenet_v2
     PRETRAINED: True
 
