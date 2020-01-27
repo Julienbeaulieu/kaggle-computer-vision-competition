@@ -1,12 +1,13 @@
-EXP_NAME: default_config
 DATASET:
   NAME: bengali_kaggle
+  TRAIN_DATA_PATH: C:/Users/mingy/Documents/ml_data/bengali/train_data.p
+  VAL_DATA_PATH: C:/Users/mingy/Documents/ml_data/bengali/val_data.p
+  DEFAULT_SIZE:
+  - 137
+  - 236
   GRAPHEME_SIZE: 168
   VOWEL_SIZE: 11
   CONSONANT_SIZE: 7
-  ORIGINAL_SHAPE:
-    - 137
-    - 236
   AUGMENTATION:
     BLURRING_PROB: 0.25
     BRIGHTNESS_CONTRAST_PROB: 1
@@ -17,17 +18,42 @@ DATASET:
   CONCENTRATE_CROP: true
   BATCH_SIZE: 32
   CPU_NUM: 4
+  NORMALIZE_MEAN:
+  - 0.485
+  - 0.456
+  - 0.406
+  NORMALIZE_STD:
+  - 0.229
+  - 0.224
+  - 0.225
+  TO_RGB: true
   RESIZE_SHAPE:
-    - 128
-    - 128
-  TO_RGB: True
-  NORMALIZE_MEAN:  [0.485, 0.456, 0.406]
-  NORMALIZE_STD:  [0.229, 0.224, 0.225]
-  TRAIN_DATA_PATH: ""
-  VAL_DATA_PATH: ""
-  LABELS_WEIGHTS_PATH: ""
+  - 128
+  - 128
 MODEL:
+  META_ARCHITECTURE: baseline
+  NORMALIZATION_FN: BN
   BACKBONE:
     NAME: mobilenet_v2
-    PRETRAINED: True
-
+    PRETRAINED_PATH: C:\Users\mingy\Documents\ml_data\torchvision_models\mobilenet_v2-b0353104.pth
+  HEAD:
+    NAME: simple_head
+    ACTIVATION: leaky_relu
+    BN: true
+    DROPOUT: -1
+    HIDDEN_DIMS:
+    - 512
+    - 256
+    INPUT_DIM: 1280
+    OUTPUT_DIMS:
+    - 168
+    - 11
+    - 7
+  SOLVER:
+    LABELS_WEIGHTS_PATH: C:/Users/mingy/Documents/ml_data/bengali/labels_weights.p
+    TOTAL_EPOCHS: 20
+    OPTIMIZER: adam
+    BASE_LR: 0.001
+    LOSS_FN: xentropy
+OUTPUT_PATH: ''
+RESUME_PATH: ''
