@@ -51,7 +51,7 @@ MODEL:
     - 7
   SOLVER:
     LABELS_WEIGHTS_PATH: C:/Users/mingy/Documents/ml_data/bengali/labels_weights.p
-    TOTAL_EPOCHS: 20
+    TOTAL_EPOCHS: 40
     OPTIMIZER: adam
     BASE_LR: 0.001
     LOSS_FN: xentropy
