@@ -16,3 +16,8 @@ pathlib2
 
 # To read Paquet file.
 pyarrow
+
+# Jupyter
+jupyter
+
+pandas

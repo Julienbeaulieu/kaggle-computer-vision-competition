@@ -4,6 +4,17 @@ import logging
 from pathlib import Path
 from dotenv import find_dotenv, load_dotenv
 
+# Add ability to read pqcuqet
+import pyarrow.parquet as pq
+import pandas as pd
+
+def train2image(vector_image: pd.DataFrame):
+    """
+    Convert a vector matrix to an actual image.
+    :return:
+    """
+
+
 
 @click.command()
 @click.argument('input_filepath', type=click.Path(exists=True))
@@ -14,6 +25,10 @@ def main(input_filepath, output_filepath):
     """
     logger = logging.getLogger(__name__)
     logger.info('making final data set from raw data')
+    # Read into parquet table object.
+    parquet_table = pq.read_table(input_filepath)
+    #
+    parquet_dataframe = parquet_table.to_pandas()
 
 
 if __name__ == '__main__':
