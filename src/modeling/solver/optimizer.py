@@ -15,6 +15,6 @@ def build_optimizer(model: torch.nn.Module, solver_cfg: CfgNode) -> Optimizer:
         'adam': torch.optim.Adam,
         'sgd': torch.optim.SGD
     }
-    opti_type = solver_cfg.TYPE
+    opti_type = solver_cfg.OPTIMIZER
     lr = solver_cfg.BASE_LR
     return optimzers[opti_type](parameters, lr=lr)

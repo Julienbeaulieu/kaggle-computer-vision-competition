@@ -30,6 +30,7 @@ class SimplePredictionHead(nn.Module):
             LinearLayer(input_dim, sum(output_dims), bn=False, activation=None, dropout_rate=-1)
         )
 
+        self.fc_layers = nn.Sequential(*self.fc_layers)
         for m in self.modules():
             if isinstance(m, nn.BatchNorm1d):
                 nn.init.ones_(m.weight)
@@ -40,6 +41,4 @@ class SimplePredictionHead(nn.Module):
 
     def forward(self, x):
 
-        for fc_layer in self.fc_layers:
-            x = fc_layer(x)
-        return x
+        return self.fc_layers(x)

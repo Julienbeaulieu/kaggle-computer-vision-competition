@@ -40,9 +40,10 @@ def train(cfg):
     _ = model.cuda()
 
     # SOLVER EVALUATOR
-    solver_cfg = cfg.SOLVER
+    solver_cfg = cfg.MODEL.SOLVER
     optimizer = build_optimizer(model, solver_cfg)
     evaluator = build_evaluator(solver_cfg)
+    evaluator.float().cuda()
     total_epochs = solver_cfg.TOTAL_EPOCHS
 
     for epoch in range(current_epoch, total_epochs):
@@ -54,7 +55,7 @@ def train(cfg):
         for idx, (inputs, labels) in enumerate(train_itr):
 
             # compute
-            input_data = inputs.cuda()
+            input_data = inputs.float().cuda()
             labels = labels.cuda()
             grapheme_logits, vowel_logits, consonant_logits = model(input_data)
 
@@ -80,7 +81,7 @@ def train(cfg):
         total_acc = 0
         with torch.no_grad():
             for idx, (inputs, labels) in enumerate(val_itr):
-                input_data = inputs.cuda()
+                input_data = inputs.float().cuda()
                 labels = labels.cuda()
                 grapheme_logits, vowel_logits, consonant_logits = model(input_data)
                 eval_result = evaluator(grapheme_logits, vowel_logits, consonant_logits, labels)
