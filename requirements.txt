@@ -19,5 +19,14 @@ pyarrow
 
 # Jupyter
 jupyter
+matplotlib
 
 pandas
+yacs
+pillow
+opencv-python
+
+#install pytorch using conda!
+# Be careful about your cuda toolkit version etc.
+# e.g. conda install pytorch torchvision cudatoolkit=10.1 -c pytorch
+sklearn
