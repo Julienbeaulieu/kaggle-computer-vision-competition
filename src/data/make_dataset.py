@@ -90,7 +90,7 @@ def dump_image_labels():
     labels = load_labels()
     all_data = list(zip(imgs, labels))
 
-    pickle.dump(all_data, open(PATH_DATA_RAW / 'all_data.p', 'wb'))
+    pickle.dump(all_data, open(PATH_DATA_INTERIM / 'all_data.p', 'wb'))
     return all_data
 
 def split_train_test():
