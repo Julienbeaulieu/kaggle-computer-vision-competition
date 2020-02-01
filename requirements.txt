@@ -30,3 +30,4 @@ opencv-python
 # Be careful about your cuda toolkit version etc.
 # e.g. conda install pytorch torchvision cudatoolkit=10.1 -c pytorch
 sklearn
+albumentations

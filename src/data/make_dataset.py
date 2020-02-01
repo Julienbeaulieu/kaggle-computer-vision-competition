@@ -13,9 +13,9 @@ import numpy as np
 import pandas as pd
 
 
-
-PATH_DATA_RAW = os.getenv("PATH_DATA_RAW")
-PATH_DATA_INTERIM = os.getenv("PATH_DATA_INTERIM")
+load_dotenv(find_dotenv())
+PATH_DATA_RAW = Path(os.getenv("PATH_DATA_RAW"))
+PATH_DATA_INTERIM = Path(os.getenv("PATH_DATA_INTERIM"))
 
 # Template train data image file variable to be updated. i.e. the ID part
 TRAIN_PARQUET_FORM = 'train_image_data_ID.parquet'
@@ -55,7 +55,7 @@ def load_images(train_test):
     for id in ['0', '1', '2', '3']:
 
         # Form the path of the files.
-        path = os.path.join(PATH_DATA_RAW, path_form.replace('ID', id))
+        path = PATH_DATA_RAW / path_form.replace('ID', id)
 
         print('Loading', path)
 
@@ -76,7 +76,7 @@ def load_labels():
     Utility function to load the labels from CSV and dump to numpy memory variables.
     :return:
     """
-    labels = pd.read_csv(os.path.join(PATH_DATA_RAW, LABEL_PATH))
+    labels = pd.read_csv(PATH_DATA_RAW / LABEL_PATH)
     labels = labels.iloc[:, 1:4].to_numpy()
     return labels
 
@@ -90,7 +90,7 @@ def dump_image_labels():
     labels = load_labels()
     all_data = list(zip(imgs, labels))
 
-    pickle.dump(all_data, open(os.path.join(PATH_DATA_RAW, 'all_data.p'), 'wb'))
+    pickle.dump(all_data, open(PATH_DATA_RAW / 'all_data.p', 'wb'))
     return all_data
 
 def split_train_test():
@@ -104,24 +104,19 @@ def split_train_test():
     train_size = int(data_size * 0.8)
     train_data = all_data[:train_size]
     val_data = all_data[train_size:]
-    pickle.dump(train_data, open(os.path.join(PATH_DATA_INTERIM, 'train_data.p'), 'wb'))
-    pickle.dump(val_data, open(os.path.join(PATH_DATA_INTERIM, 'val_data.p'), 'wb'))
+    pickle.dump(train_data, open(PATH_DATA_INTERIM / 'train_data.p', 'wb'))
+    pickle.dump(val_data, open(PATH_DATA_INTERIM / 'val_data.p', 'wb'))
 
 
 @click.command()
-@click.argument('input_filepath', type=click.Path(exists=True))
-@click.argument('output_filepath', type=click.Path())
-def main(input_filepath, output_filepath):
+def main():
     """ Runs data processing scripts to turn raw data from (../raw) into
         cleaned data ready to be analyzed (saved in ../processed).
     """
     logger = logging.getLogger(__name__)
     logger.info('making final data set from raw data')
-    # Read into parquet table object.
-    parquet_table = pq.read_table(input_filepath)
-    #
-    parquet_dataframe = parquet_table.to_pandas()
 
+    split_train_test()
 
 if __name__ == '__main__':
     log_fmt = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
