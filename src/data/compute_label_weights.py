@@ -28,13 +28,13 @@ def compute_labeled_weights():
 
     # Use Numpy Clip to compute the balanced class weight to ensure class balanced performance.
     consonant_weights = np.clip(compute_class_weight('balanced', list(range(np.max(consonant_labels)+1)), consonant_labels), 0.5, 3)
-    #consonant_weights
+    print(consonant_weights)
 
     vowel_weights = np.clip(compute_class_weight('balanced', list(range(np.max(vowel_labels)+1)), vowel_labels), 0.5, 3)
-    #vowel_weights
+    print(vowel_weights)
 
     grapheme_weights = np.clip(compute_class_weight('balanced', list(range(np.max(grapheme_labels)+1)), grapheme_labels), 0.5, 3)
-    #grapheme_weights
+    print(grapheme_weights)
 
     weights  = {
         'grapheme': grapheme_weights,
