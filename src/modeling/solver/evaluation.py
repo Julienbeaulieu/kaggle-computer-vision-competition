@@ -43,6 +43,9 @@ class MultiHeadsEval(nn.Module):
         self.vowel_logits_cache = []
         self.consonant_logits_cache = []
         self.labels_cache = []
+        self.acc_cache = []
+        self.loss_cache = []
+
 
     def forward(self, grapheme_logits: torch.Tensor, vowel_logits: torch.Tensor, consonant_logits: torch.Tensor,
                 labels: torch.Tensor) -> Dict:
@@ -67,7 +70,8 @@ class MultiHeadsEval(nn.Module):
         self.vowel_logits_cache.append(vowel_logits.detach().cpu().numpy())
         self.consonant_logits_cache.append(consonant_logits.detach().cpu().numpy())
         self.labels_cache.append(labels.detach().cpu().numpy())
-
+        self.loss_cache.append(loss.detach().item())
+        self.acc_cache.append(acc.detach().item())
         return eval_result
 
     def clear_cache(self):
@@ -75,6 +79,8 @@ class MultiHeadsEval(nn.Module):
         self.vowel_logits_cache = []
         self.consonant_logits_cache = []
         self.labels_cache = []
+        self.loss_cache = []
+        self.acc_cache = []
 
     def evalulate_on_cache(self):
         grapheme_logits_all = np.vstack(self.grapheme_logits_cache)
@@ -113,16 +119,21 @@ class MultiHeadsEval(nn.Module):
         consonant_clf_result = clf_result_helper(consonant_clf_result, preds_labels, 'consonant_pred',
                                                  'consonant_label')
 
+        acc = np.mean(self.acc_cache)
+        loss = np.mean(self.loss_cache)
         result = {
             'grapheme_clf_result': grapheme_clf_result,
             'vowel_clf_result': vowels_clf_result,
             'consonant_clf_result': consonant_clf_result,
-            'kaggle_score': kaggle_score
+            'kaggle_score': kaggle_score,
+            'preds_labels': preds_labels,
+            'acc': acc,
+            'loss': loss
         }
         return result
 
 
-def build_evaluator(solver_cfg: CfgNode) -> nn.Module:
+def build_evaluator(solver_cfg: CfgNode) -> MultiHeadsEval:
     return MultiHeadsEval(solver_cfg)
 
 
