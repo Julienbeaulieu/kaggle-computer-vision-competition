@@ -5,6 +5,7 @@ from typing import List, Dict
 from yacs.config import CfgNode
 from torch import nn
 from sklearn.metrics.classification import classification_report
+from collections import Counter
 
 LOSS_FN = {
     'xentropy': torch.nn.CrossEntropyLoss
@@ -91,9 +92,30 @@ class MultiHeadsEval(nn.Module):
         kaggle_score = (grapheme_clf_result['macro avg']['recall'] * 2 + vowels_clf_result['macro avg']['recall'] +
                         consonant_clf_result['macro avg']['recall']) / 4
 
+        preds_labels = []
+        for idx, grapheme_pred in enumerate(grapheme_preds):
+            vowel_pred = vowels_preds[idx]
+            consonant_pred = consonant_preds[idx]
+
+            labels = labels_all[idx]
+            entry = {
+                'grapheme_pred': grapheme_pred,
+                'vowel_pred': vowel_pred,
+                'consonant_pred': consonant_pred,
+                'grapheme_label': labels[0],
+                'vowel_label': labels[1],
+                'consonant_label': labels[2],
+            }
+            preds_labels.append(entry)
+
+        grapheme_clf_result = clf_result_helper(grapheme_clf_result, preds_labels, 'grapheme_pred', 'grapheme_label')
+        vowels_clf_result = clf_result_helper(vowels_clf_result, preds_labels, 'vowel_pred', 'vowel_label')
+        consonant_clf_result = clf_result_helper(consonant_clf_result, preds_labels, 'consonant_pred',
+                                                 'consonant_label')
+
         result = {
             'grapheme_clf_result': grapheme_clf_result,
-            'vowels_clf_result': vowels_clf_result,
+            'vowel_clf_result': vowels_clf_result,
             'consonant_clf_result': consonant_clf_result,
             'kaggle_score': kaggle_score
         }
@@ -102,3 +124,31 @@ class MultiHeadsEval(nn.Module):
 
 def build_evaluator(solver_cfg: CfgNode) -> nn.Module:
     return MultiHeadsEval(solver_cfg)
+
+
+def clf_result_helper(clf_result: Dict, preds_labels: List, pred_key: str, label_key: str):
+    """
+    a helper function get per class result the highest error class, and highest error class occurences
+    :param clf_result:  classfier result dict from classificaiton_report
+    :param preds_labels: list of preds and labels
+    :param pred_key:  one of [grapheme_pred, vowel_pred, consonant_pred]
+    :param label_key: one of [grapheme_label, vowel_label, consonant_label]
+    :return: list view of clf result with some added info
+    """
+    for k in clf_result.keys():
+        if k not in ['accuracy', 'macro avg', 'weighted avg']:
+            cls = int(k)
+            preds_counts = Counter([x[pred_key] for x in preds_labels if x[label_key] == cls])
+            preds_counts = [[k, preds_counts[k]] for k in preds_counts]
+            incorrect_preds_counts = [x for x in preds_counts if x[0] != cls]
+            if len(incorrect_preds_counts) > 0:
+                highest_error_cls, highest_error_cls_num = sorted(incorrect_preds_counts, key=lambda x: x[1])[-1]
+            else:
+                highest_error_cls, highest_error_cls_num = -1, 0
+
+            clf_result[k]['class'] = cls
+            clf_result[k]['error_cls'] = highest_error_cls
+            clf_result[k]['error_cls_rate'] = highest_error_cls_num / clf_result[k]['support']
+
+    clf_result = [clf_result[k] for k in clf_result if k not in ['accuracy', 'macro avg', 'weighted avg']]
+    return clf_result
