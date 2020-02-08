@@ -46,7 +46,6 @@ class MultiHeadsEval(nn.Module):
         self.acc_cache = []
         self.loss_cache = []
 
-
     def forward(self, grapheme_logits: torch.Tensor, vowel_logits: torch.Tensor, consonant_logits: torch.Tensor,
                 labels: torch.Tensor) -> Dict:
         # compute loss
@@ -102,7 +101,6 @@ class MultiHeadsEval(nn.Module):
         for idx, grapheme_pred in enumerate(grapheme_preds):
             vowel_pred = vowels_preds[idx]
             consonant_pred = consonant_preds[idx]
-
             labels = labels_all[idx]
             entry = {
                 'grapheme_pred': grapheme_pred,
@@ -110,7 +108,7 @@ class MultiHeadsEval(nn.Module):
                 'consonant_pred': consonant_pred,
                 'grapheme_label': labels[0],
                 'vowel_label': labels[1],
-                'consonant_label': labels[2],
+                'consonant_label': labels[2]
             }
             preds_labels.append(entry)
 

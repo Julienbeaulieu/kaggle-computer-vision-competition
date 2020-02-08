@@ -42,7 +42,8 @@ def vis_square(data):
     plt.show()
 
 
-def visualize_class_imgs(data_list: List, grapheme_cls: int=None, vowel_cls: int=None, consonant_cls: int=None, display_num=25):
+def visualize_class_imgs(data_list: List, grapheme_cls: int = None, vowel_cls: int = None, consonant_cls: int = None,
+                         display_num=25):
     """
 
     :param data_list: list of (img, label) pairs
