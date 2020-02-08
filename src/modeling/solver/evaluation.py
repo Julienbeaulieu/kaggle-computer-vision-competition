@@ -88,8 +88,8 @@ class MultiHeadsEval(nn.Module):
         grapheme_clf_result = classification_report(labels_all[:, 0], grapheme_preds, output_dict=True)
         vowels_clf_result = classification_report(labels_all[:, 1], vowels_preds, output_dict=True)
         consonant_clf_result = classification_report(labels_all[:, 2], consonant_preds, output_dict=True)
-        kaggle_score = (grapheme_clf_result['macro_avg']['recall'] * 2 + vowels_clf_result['macro_avg']['recall'] +
-                        consonant_clf_result['macro_avg']['recall']) / 4
+        kaggle_score = (grapheme_clf_result['macro avg']['recall'] * 2 + vowels_clf_result['macro avg']['recall'] +
+                        consonant_clf_result['macro avg']['recall']) / 4
 
         result = {
             'grapheme_clf_result': grapheme_clf_result,
@@ -98,6 +98,7 @@ class MultiHeadsEval(nn.Module):
             'kaggle_score': kaggle_score
         }
         return result
+
 
 def build_evaluator(solver_cfg: CfgNode) -> nn.Module:
     return MultiHeadsEval(solver_cfg)
