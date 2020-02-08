@@ -6,7 +6,7 @@ __C = ConfigurationNode()
 
 # importing default as a global singleton
 cfg = __C
-
+__C.DESCRIPTION = 'Default config'
 __C.DATASET = ConfigurationNode()
 __C.DATASET.NAME = 'bengali_kaggle'
 __C.DATASET.DEFAULT_SIZE = (137, 236)

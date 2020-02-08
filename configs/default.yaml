@@ -1,3 +1,4 @@
+DESCRIPTION: default config
 DATASET:
   NAME: bengali_kaggle
   TRAIN_DATA_PATH: C:/Users/mingy/Documents/ml_data/bengali/train_data.p
