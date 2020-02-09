@@ -1,7 +1,7 @@
 import torch
 import pickle
 import numpy as np
-from typing import List, Dict
+from typing import List, Dict, Union
 from yacs.config import CfgNode
 from torch import nn
 from sklearn.metrics.classification import classification_report
@@ -14,17 +14,34 @@ LOSS_FN = {
 
 class EvalBlock(nn.Module):
 
-    def __init__(self, loss_fn: str, weights: List[float]):
+    def __init__(self, solver_cfg: CfgNode, weights: Union[None, List[float]]):
         super(EvalBlock, self).__init__()
-        self.loss_fn = LOSS_FN[loss_fn](torch.tensor(weights))
+
+        loss_fn = solver_cfg.LOSS_FN
+        if weights is not None:
+            self.loss_fn = LOSS_FN[loss_fn](torch.tensor(weights), reduction='none')
+        else:
+            self.loss_fn = LOSS_FN[loss_fn](reduction='none')
+        self.ohem_rate = solver_cfg.OHEM_RATE
 
     def forward(self, logits, labels):
-        loss = self.loss_fn(logits, labels)
+        losses = self.loss_fn(logits, labels)
+        if self.ohem_rate > 0:
+            loss = self.compute_ohem_loss(losses)
+        else:
+            loss = losses.mean()
         preds = torch.argmax(logits, dim=1)
         corrects = (labels == preds)
         acc = torch.sum(corrects) / (len(corrects) + 0.0)
         return loss, acc
 
+    def compute_ohem_loss(self, losses: torch.Tensor):
+        N = losses.shape
+        keep_size = int(N*self.ohem_rate)
+        _, ohem_indices = losses.topk(keep_size)
+        ohem_losses = losses[ohem_indices]
+        loss = ohem_losses.mean()
+        return loss
 
 class MultiHeadsEval(nn.Module):
 
@@ -36,9 +53,9 @@ class MultiHeadsEval(nn.Module):
         vowel_weights = weights_data['vowel']
         consonant_weights = weights_data['consonant']
         loss_fn = solver_cfg.LOSS_FN
-        self.grapheme_eval = EvalBlock(loss_fn, grapheme_weights)
-        self.vowel_eval = EvalBlock(loss_fn, vowel_weights)
-        self.consonant_eval = EvalBlock(loss_fn, consonant_weights)
+        self.grapheme_eval = EvalBlock(solver_cfg, grapheme_weights)
+        self.vowel_eval = EvalBlock(solver_cfg, vowel_weights)
+        self.consonant_eval = EvalBlock(solver_cfg, consonant_weights)
         self.grapheme_logits_cache = []
         self.vowel_logits_cache = []
         self.consonant_logits_cache = []

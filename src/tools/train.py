@@ -95,6 +95,7 @@ def train(cfg: CfgNode):
         train_result = evaluator.evalulate_on_cache()
         train_total_err = train_result['loss']
         train_total_acc = train_result['acc']
+        train_kaggle_score = train_result['kaggle_score']
         print("Epoch {0} Training, Loss {1}, Acc {2}".format(epoch, train_total_err, train_total_acc))
         evaluator.clear_cache()
 
@@ -115,6 +116,8 @@ def train(cfg: CfgNode):
         val_result = evaluator.evalulate_on_cache()
         val_total_err = val_result['loss']
         val_total_acc = val_result['acc']
+        val_kaggle_score = val_result['kaggle_score']
+
         print("Epoch {0} Eval, Loss {1}, Acc {2}".format(epoch, val_total_err, val_total_acc))
         evaluator.clear_cache()
 
@@ -138,8 +141,10 @@ def train(cfg: CfgNode):
                 'epoch': epoch,
                 'train_err': train_total_err,
                 'train_acc': train_total_acc,
+                'train_kaggle_score': train_kaggle_score,
                 'val_err': val_total_err,
-                'val_acc': val_total_acc
+                'val_acc': val_total_acc,
+                'val_kaggle_score': val_kaggle_score
             }
         )
         pickle.dump(perf_trace, open(perf_path, 'wb'))

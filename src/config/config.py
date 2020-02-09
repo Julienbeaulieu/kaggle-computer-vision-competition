@@ -53,6 +53,7 @@ __C.MODEL.SOLVER = ConfigurationNode()
 __C.MODEL.SOLVER.OPTIMIZER = 'adam'
 __C.MODEL.SOLVER.BASE_LR = 0.001
 __C.MODEL.SOLVER.LOSS_FN = 'xentropy'
+__C.MODEL.SOLVER.OHEM_RATE = 0
 __C.MODEL.SOLVER.TOTAL_EPOCHS = 40
 __C.MODEL.SOLVER.LABELS_WEIGHTS_PATH = 'C:/Users/mingy/Documents/ml_data/bengali/labels_weights.p'
 
