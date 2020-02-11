@@ -13,6 +13,18 @@ import os
 PATH_DATA_INTERIM=os.getenv("PATH_DATA_INTERIM")
 PATH_DATA_RAW=os.getenv("PATH_DATA_RAW")
 import pandas as pd
+from typing import List
+
+def get_image_data(p_data:List[tuple]):
+    """
+    Get image data component from the p data list of tuple structure
+    :return:
+    """
+    # Convert list of tuple to tuple of list.
+    tuple_of_list = list(zip(*p_data))
+    tuple_of_images = tuple_of_list[0]
+    list_of_images = list(tuple_of_images)
+    return list_of_images
 
 def load_label_csv():
     """
