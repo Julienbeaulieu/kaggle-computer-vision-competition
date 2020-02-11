@@ -1,17 +1,47 @@
 
 import os
 import numpy as np
+import pandas as pd
 import pickle
 from sklearn.utils.class_weight import compute_class_weight
 from dotenv import find_dotenv, load_dotenv
 import click
 import logging
 from pathlib import Path
+from typing import List
 # find .env automagically by walking up directories until it's found, then
 # load up the .env entries as environment variables
 load_dotenv(find_dotenv())
 
 PATH_DATA = os.getenv("PATH_DATA_INTERIM")
+
+
+
+def get_labels(input_p_data):
+    """
+    Retrieve the labels of a p file based dataframe and return as a dataframe.
+    :return:
+    """
+    classes_train = list(list(zip(*input_p_data))[1])
+    df = pd.DataFrame(classes_train)
+    df.columns = ["grapheme_root", "vowel_diacritic", "consonant_diacritic"]
+    return df
+
+
+def filter_label_df_index(df_input, index_root, index_vowel, index_consonant) -> List[int]:
+    """
+    Based on the inputted combo of the root, vowel, consonant, return a list of index within the df_input that has matching characteristics
+    :param df_input:
+    :param index_root:
+    :param index_vowel:
+    :param index_consonant:
+    :return:
+    """
+    index_relevant = df_input.index [df_input.grapheme_root.eq(index_root) &
+                                  df_input.vowel_diacritic.eq(index_vowel) &
+                                  df_input.consonant_diacritic.eq(index_consonant)]
+    return index_relevant
+
 
 @click.command()
 def compute_labeled_weights():
