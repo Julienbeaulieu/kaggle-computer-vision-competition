@@ -26,7 +26,7 @@ class EvalBlock(nn.Module):
 
     def forward(self, logits, labels):
         losses = self.loss_fn(logits, labels)
-        if self.ohem_rate > 0:
+        if self.ohem_rate < 1:
             loss = self.compute_ohem_loss(losses)
         else:
             loss = losses.mean()
@@ -36,23 +36,28 @@ class EvalBlock(nn.Module):
         return loss, acc
 
     def compute_ohem_loss(self, losses: torch.Tensor):
-        N = losses.shape
-        keep_size = int(N*self.ohem_rate)
+        N = losses.shape[0]
+        keep_size = int(N * self.ohem_rate)
         _, ohem_indices = losses.topk(keep_size)
         ohem_losses = losses[ohem_indices]
         loss = ohem_losses.mean()
         return loss
+
 
 class MultiHeadsEval(nn.Module):
 
     def __init__(self, solver_cfg: CfgNode):
         super(MultiHeadsEval, self).__init__()
         weights_path = solver_cfg.LABELS_WEIGHTS_PATH
-        weights_data = pickle.load(open(weights_path, 'rb'))
-        grapheme_weights = weights_data['grapheme']
-        vowel_weights = weights_data['vowel']
-        consonant_weights = weights_data['consonant']
-        loss_fn = solver_cfg.LOSS_FN
+        if weights_path != '':
+            weights_data = pickle.load(open(weights_path, 'rb'))
+            grapheme_weights = weights_data['grapheme']
+            vowel_weights = weights_data['vowel']
+            consonant_weights = weights_data['consonant']
+        else:
+            grapheme_weights = None
+            vowel_weights = None
+            consonant_weights = None
         self.grapheme_eval = EvalBlock(solver_cfg, grapheme_weights)
         self.vowel_eval = EvalBlock(solver_cfg, vowel_weights)
         self.consonant_eval = EvalBlock(solver_cfg, consonant_weights)
