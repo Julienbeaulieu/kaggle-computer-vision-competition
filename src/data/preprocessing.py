@@ -5,13 +5,7 @@ from albumentations import OneOf, Compose, MotionBlur, MedianBlur, Blur, RandomB
     GridDistortion, Rotate
 from typing import Union
 
-import os
-import sys
-import pickle
 from cv2 import resize
-import time
-
-sys.path.append('../')
 
 
 def content_crop(img: ndarray) -> ndarray:

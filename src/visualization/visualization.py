@@ -1,5 +1,7 @@
+from typing import List
 import numpy as np
 from matplotlib import pyplot as plt
+import random
 
 
 def vis_square(data):
@@ -38,3 +40,30 @@ def vis_square(data):
         plt.imshow(data)
 
     plt.show()
+
+
+def visualize_class_imgs(data_list: List, grapheme_cls: int = None, vowel_cls: int = None, consonant_cls: int = None,
+                         display_num=25):
+    """
+
+    :param data_list: list of (img, label) pairs
+    :param grapheme_cls:
+    :param vowel_cls:
+    :param consonant_cls:
+    :param display_num: number of random images to be displayed
+    :return:
+    """
+
+    if grapheme_cls is not None:
+        data_list = [x for x in data_list if x[1][0] == grapheme_cls]
+
+    if vowel_cls is not None:
+        data_list = [x for x in data_list if x[1][1] == vowel_cls]
+
+    if vowel_cls is not None:
+        data_list = [x for x in data_list if x[1][2] == consonant_cls]
+
+    random.shuffle(data_list)
+
+    imgs = np.array([x[0] for x in data_list[:display_num]])
+    vis_square(imgs)
