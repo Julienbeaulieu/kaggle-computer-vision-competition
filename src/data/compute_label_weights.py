@@ -1,4 +1,3 @@
-
 import os
 import numpy as np
 import pickle
@@ -22,21 +21,24 @@ def compute_labeled_weights():
     labels = np.array([x[1] for x in all_data])
 
     # Get the three separate class label.
-    grapheme_labels =labels[:, 0]
-    vowel_labels =labels[:, 1]
-    consonant_labels =labels[:, 2]
+    grapheme_labels = labels[:, 0]
+    vowel_labels = labels[:, 1]
+    consonant_labels = labels[:, 2]
 
     # Use Numpy Clip to compute the balanced class weight to ensure class balanced performance.
-    consonant_weights = np.clip(compute_class_weight('balanced', list(range(np.max(consonant_labels)+1)), consonant_labels), 0.5, 3)
+    consonant_weights = np.clip(
+        compute_class_weight('balanced', list(range(np.max(consonant_labels) + 1)), consonant_labels), 0.5, 3)
     print(consonant_weights)
 
-    vowel_weights = np.clip(compute_class_weight('balanced', list(range(np.max(vowel_labels)+1)), vowel_labels), 0.5, 3)
+    vowel_weights = np.clip(compute_class_weight('balanced', list(range(np.max(vowel_labels) + 1)), vowel_labels), 0.5,
+                            3)
     print(vowel_weights)
 
-    grapheme_weights = np.clip(compute_class_weight('balanced', list(range(np.max(grapheme_labels)+1)), grapheme_labels), 0.5, 3)
+    grapheme_weights = np.clip(
+        compute_class_weight('balanced', list(range(np.max(grapheme_labels) + 1)), grapheme_labels), 0.5, 3)
     print(grapheme_weights)
 
-    weights  = {
+    weights = {
         'grapheme': grapheme_weights,
         'vowel': vowel_weights,
         'consonant': consonant_weights
@@ -46,7 +48,7 @@ def compute_labeled_weights():
 
     os.path.join(PATH_DATA, 'labels_weights.p')
 
-if __name__=="__main__":
+if __name__ == "__main__":
     log_fmt = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
     logging.basicConfig(level=logging.INFO, format=log_fmt)
 
@@ -58,5 +60,3 @@ if __name__=="__main__":
     load_dotenv(find_dotenv())
 
     compute_labeled_weights()
-
-
