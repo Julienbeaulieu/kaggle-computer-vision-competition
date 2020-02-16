@@ -1,2 +1,2 @@
 from .softmax_cross_entropy import SoftMaxCE
-from .weighted_class_weights import WeightedFocalLoss
+from .weighted_focal_loss import WeightedFocalLoss

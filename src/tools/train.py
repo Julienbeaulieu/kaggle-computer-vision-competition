@@ -63,9 +63,17 @@ def train(cfg: CfgNode):
     train_loader = build_data_loader(train_data, cfg.DATASET, True)
     val_loader = build_data_loader(val_data, cfg.DATASET, False)
 
-
     # MODEL
     model = build_model(cfg.MODEL)
+    solver_cfg = cfg.MODEL.SOLVER
+    loss_fn = solver_cfg.LOSS.NAME
+    if loss_fn == 'weighted_focal_loss':
+        last_layer = model.head.fc_layers[-1]
+        for m in last_layer.modules():
+            print(m)
+            if isinstance(m, torch.nn.Linear):
+                torch.nn.init.constant_(m.bias, -3.0)
+
     current_epoch = 0
     if cfg.RESUME_PATH != "":
         checkpoint = torch.load(cfg.RESUME_PATH, map_location='cpu')
@@ -74,7 +82,6 @@ def train(cfg: CfgNode):
     _ = model.cuda()
 
     # SOLVER EVALUATOR
-    solver_cfg = cfg.MODEL.SOLVER
     use_amp = solver_cfg.AMP
     optimizer = build_optimizer(model, solver_cfg)
     evaluator = build_evaluator(solver_cfg)
@@ -105,7 +112,7 @@ def train(cfg: CfgNode):
                 with amp.scale_loss(loss, optimizer) as scaled_loss:
                     scaled_loss.backward()
             else:
-                loss.backword()
+                loss.backward()
             optimizer.step()
 
             eval_result = {k: eval_result[k].item() for k in eval_result}

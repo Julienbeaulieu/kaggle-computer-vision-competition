@@ -26,7 +26,7 @@ class WeightedFocalLoss(torch.nn.Module):
         alpha = self.class_weights[labels]
 
         ce_loss = F.binary_cross_entropy_with_logits(
-            logits, labels, reduction="none"
+            logits, targets, reduction="none"
         )
 
         #  https://github.com/richardaecn/class-balanced-loss/blob/master/src/cifar_main.py#L226-L266
