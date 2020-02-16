@@ -51,6 +51,13 @@ def train(cfg: CfgNode):
     # DATA LOADER
     train_data = pickle.load(open(train_path, 'rb'))
     val_data = pickle.load(open(val_path, 'rb'))
+
+    # witchcraft: only train on few classes
+    focus_cls = cfg.DATASET.FOCUS_CLASS
+    if len(focus_cls) > 0:
+        train_data = [x for x in train_data if x[1][0] in focus_cls]
+        val_data = [x for x in val_data if x[1][0] in focus_cls]
+
     train_loader = build_data_loader(train_data, cfg.DATASET, True)
     val_loader = build_data_loader(val_data, cfg.DATASET, False)
 

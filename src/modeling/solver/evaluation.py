@@ -1,54 +1,40 @@
 import torch
 import pickle
 import numpy as np
-from typing import List, Dict, Union
-from yacs.config import CfgNode
 from torch import nn
-from sklearn.metrics.classification import classification_report
 from collections import Counter
-
-LOSS_FN = {
-    'xentropy': torch.nn.CrossEntropyLoss
-}
+from yacs.config import CfgNode
+from typing import List, Dict, Union
+from sklearn.metrics.classification import classification_report
+from .loss import WeightedFocalLoss, SoftMaxCE
 
 
 class EvalBlock(nn.Module):
 
-    def __init__(self, solver_cfg: CfgNode, weights: Union[None, List[float]]):
+    def __init__(self, loss_cfg: CfgNode, weights: Union[None, List[float]], num_classes: int):
         super(EvalBlock, self).__init__()
 
-        loss_fn = solver_cfg.LOSS_FN
-        if weights is not None:
-            self.loss_fn = LOSS_FN[loss_fn](torch.tensor(weights), reduction='none')
+        # very messy code, to be cleaned later
+        if loss_cfg.NAME == 'xentropy':
+            self.loss_fn = SoftMaxCE(weights, loss_cfg.OHEM_RATE)
         else:
-            self.loss_fn = LOSS_FN[loss_fn](reduction='none')
-        self.ohem_rate = solver_cfg.OHEM_RATE
+            fl_params = loss_cfg.FOCAL_LOSS
+            self.loss_fn = WeightedFocalLoss(num_classes, weights, fl_params.GAMMA)
 
     def forward(self, logits, labels):
-        losses = self.loss_fn(logits, labels)
-        if self.ohem_rate < 1:
-            loss = self.compute_ohem_loss(losses)
-        else:
-            loss = losses.mean()
+        loss = self.loss_fn(logits, labels)
         preds = torch.argmax(logits, dim=1)
         corrects = (labels == preds)
         acc = torch.sum(corrects) / (len(corrects) + 0.0)
         return loss, acc
-
-    def compute_ohem_loss(self, losses: torch.Tensor):
-        N = losses.shape[0]
-        keep_size = int(N * self.ohem_rate)
-        _, ohem_indices = losses.topk(keep_size)
-        ohem_losses = losses[ohem_indices]
-        loss = ohem_losses.mean()
-        return loss
 
 
 class MultiHeadsEval(nn.Module):
 
     def __init__(self, solver_cfg: CfgNode):
         super(MultiHeadsEval, self).__init__()
-        weights_path = solver_cfg.LABELS_WEIGHTS_PATH
+        loss_cfg = solver_cfg.LOSS
+        weights_path = loss_cfg.LABELS_WEIGHTS_PATH
         if weights_path != '':
             weights_data = pickle.load(open(weights_path, 'rb'))
             grapheme_weights = weights_data['grapheme']
@@ -58,9 +44,10 @@ class MultiHeadsEval(nn.Module):
             grapheme_weights = None
             vowel_weights = None
             consonant_weights = None
-        self.grapheme_eval = EvalBlock(solver_cfg, grapheme_weights)
-        self.vowel_eval = EvalBlock(solver_cfg, vowel_weights)
-        self.consonant_eval = EvalBlock(solver_cfg, consonant_weights)
+
+        self.grapheme_eval = EvalBlock(loss_cfg, grapheme_weights, 168)
+        self.vowel_eval = EvalBlock(loss_cfg, vowel_weights, 11)
+        self.consonant_eval = EvalBlock(loss_cfg, consonant_weights, 7)
         self.grapheme_logits_cache = []
         self.vowel_logits_cache = []
         self.consonant_logits_cache = []
@@ -179,7 +166,9 @@ def clf_result_helper(clf_result: Dict, preds_labels: List, pred_key: str, label
 
             clf_result[k]['class'] = cls
             clf_result[k]['error_cls'] = highest_error_cls
-            clf_result[k]['error_cls_rate'] = highest_error_cls_num / clf_result[k]['support']
-
+            if clf_result[k]['support'] > 0:
+                clf_result[k]['error_cls_rate'] = highest_error_cls_num / clf_result[k]['support']
+            else:
+                clf_result[k]['error_cls_rate'] = 0
     clf_result = [clf_result[k] for k in clf_result if k not in ['accuracy', 'macro avg', 'weighted avg']]
     return clf_result

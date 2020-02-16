@@ -31,6 +31,7 @@ __C.DATASET.CPU_NUM = 4
 __C.DATASET.TO_RGB = True
 __C.DATASET.NORMALIZE_MEAN = [0.485, 0.456, 0.406]
 __C.DATASET.NORMALIZE_STD = [0.229, 0.224, 0.225]
+__C.DATASET.FOCUS_CLASS = []
 
 __C.MODEL = ConfigurationNode()
 __C.MODEL.META_ARCHITECTURE = 'baseline'
@@ -52,10 +53,17 @@ __C.MODEL.HEAD.DROPOUT = -1
 __C.MODEL.SOLVER = ConfigurationNode()
 __C.MODEL.SOLVER.OPTIMIZER = 'adam'
 __C.MODEL.SOLVER.BASE_LR = 0.001
-__C.MODEL.SOLVER.LOSS_FN = 'xentropy'
-__C.MODEL.SOLVER.OHEM_RATE = 1.0
 __C.MODEL.SOLVER.TOTAL_EPOCHS = 40
-__C.MODEL.SOLVER.LABELS_WEIGHTS_PATH = 'C:/Users/mingy/Documents/ml_data/bengali/labels_weights.p'
+
+__C.MODEL.SOLVER.LOSS = ConfigurationNode()
+__C.MODEL.SOLVER.LOSS.OHEM_RATE = 1.0
+__C.MODEL.SOLVER.LOSS.NAME = 'xentropy'
+__C.MODEL.SOLVER.LOSS.LABELS_WEIGHTS_PATH = 'C:/Users/mingy/Documents/ml_data/bengali/labels_weights.p'
+
+# focal loss related
+__C.MODEL.SOLVER.LOSS.FOCAL_LOSS = ConfigurationNode()
+__C.MODEL.SOLVER.LOSS.FOCAL_LOSS.GAMMA = 1
+__C.MODEL.SOLVER.LOSS.FOCAL_LOSS.ALPHA = -1
 
 __C.OUTPUT_PATH = ''
 __C.RESUME_PATH = ''
