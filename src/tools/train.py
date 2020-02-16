@@ -14,9 +14,11 @@ Options:
 
 
 import os
+import time
 import pickle
 import torch
 from docopt import docopt
+from apex import amp
 from src.modeling.meta_arch.build import build_model
 from src.data.bengali_data import build_data_loader
 from src.modeling.solver.optimizer import build_optimizer
@@ -61,6 +63,7 @@ def train(cfg: CfgNode):
     train_loader = build_data_loader(train_data, cfg.DATASET, True)
     val_loader = build_data_loader(val_data, cfg.DATASET, False)
 
+
     # MODEL
     model = build_model(cfg.MODEL)
     current_epoch = 0
@@ -72,11 +75,16 @@ def train(cfg: CfgNode):
 
     # SOLVER EVALUATOR
     solver_cfg = cfg.MODEL.SOLVER
+    use_amp = solver_cfg.AMP
     optimizer = build_optimizer(model, solver_cfg)
     evaluator = build_evaluator(solver_cfg)
     evaluator.float().cuda()
     total_epochs = solver_cfg.TOTAL_EPOCHS
+    if use_amp:
+        opt_level = 'O1'
+        model, optimizer = amp.initialize(model, optimizer, opt_level=opt_level)
 
+    s_time = time.time()
     for epoch in range(current_epoch, total_epochs):
         model.train()
         print('Start epoch', epoch)
@@ -92,12 +100,19 @@ def train(cfg: CfgNode):
 
             eval_result = evaluator(grapheme_logits, vowel_logits, consonant_logits, labels)
             optimizer.zero_grad()
-            eval_result['loss'].backward()
+            loss = eval_result['loss']
+            if use_amp:
+                with amp.scale_loss(loss, optimizer) as scaled_loss:
+                    scaled_loss.backward()
+            else:
+                loss.backword()
             optimizer.step()
 
             eval_result = {k: eval_result[k].item() for k in eval_result}
             if idx % 100 == 0:
-                print(idx, eval_result['loss'], eval_result['acc'])
+                t_time = time.time()
+                print(idx, eval_result['loss'], eval_result['acc'], t_time-s_time)
+                s_time = time.time()
 
         train_result = evaluator.evalulate_on_cache()
         train_total_err = train_result['loss']

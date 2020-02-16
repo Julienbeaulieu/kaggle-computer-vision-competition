@@ -39,6 +39,7 @@ __C.MODEL.NORMALIZATION_FN = 'BN'
 
 __C.MODEL.BACKBONE = ConfigurationNode()
 __C.MODEL.BACKBONE.NAME = 'mobilenet_v2'
+__C.MODEL.BACKBONE.RGB = True
 __C.MODEL.BACKBONE.PRETRAINED_PATH = r'C:\Git\bengali.ai\models\mobilenet_v2-b0353104.pth'
 
 __C.MODEL.HEAD = ConfigurationNode()
@@ -54,6 +55,7 @@ __C.MODEL.SOLVER = ConfigurationNode()
 __C.MODEL.SOLVER.OPTIMIZER = 'adam'
 __C.MODEL.SOLVER.BASE_LR = 0.001
 __C.MODEL.SOLVER.TOTAL_EPOCHS = 40
+__C.MODEL.SOLVER.AMP = False
 
 __C.MODEL.SOLVER.LOSS = ConfigurationNode()
 __C.MODEL.SOLVER.LOSS.OHEM_RATE = 1.0

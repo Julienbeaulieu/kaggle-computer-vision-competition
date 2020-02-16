@@ -23,7 +23,7 @@ class EvalBlock(nn.Module):
 
     def forward(self, logits, labels):
         loss = self.loss_fn(logits, labels)
-        preds = torch.argmax(logits, dim=1)
+        preds = torch.argmax(logits.float(), dim=1)
         corrects = (labels == preds)
         acc = torch.sum(corrects) / (len(corrects) + 0.0)
         return loss, acc

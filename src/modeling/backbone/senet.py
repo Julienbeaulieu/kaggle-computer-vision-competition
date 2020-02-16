@@ -145,7 +145,7 @@ class SEResNeXtBottleneck(Bottleneck):
 
 class SENet(nn.Module):
 
-    def __init__(self, block, layers, groups, reduction,
+    def __init__(self, block, layers, groups, reduction, rgb=True,
                  inplanes=128, input_3x3=True, downsample_kernel_size=3,
                  downsample_padding=1):
         """
@@ -164,6 +164,7 @@ class SENet(nn.Module):
             - For SE-ResNeXt models:  32
         reduction (int): Reduction ratio for Squeeze-and-Excitation modules.
             - For all models: 16
+        rgb (bool): whether input has 3 channels or grayscale
         inplanes (int):  Number of input channels for layer1.
             - For SENet154: 128
             - For SE-ResNet models: 64
@@ -186,9 +187,10 @@ class SENet(nn.Module):
         """
         super(SENet, self).__init__()
         self.inplanes = inplanes
+        input_channels = 3 if rgb else 1
         if input_3x3:
             layer0_modules = [
-                ('conv1', nn.Conv2d(3, 64, 3, stride=2, padding=1,
+                ('conv1', nn.Conv2d(input_channels, 64, 3, stride=2, padding=1,
                                     bias=False)),
                 ('bn1', nn.BatchNorm2d(64)),
                 ('relu1', nn.ReLU(inplace=True)),
@@ -203,7 +205,7 @@ class SENet(nn.Module):
             ]
         else:
             layer0_modules = [
-                ('conv1', nn.Conv2d(3, inplanes, kernel_size=7, stride=2,
+                ('conv1', nn.Conv2d(input_channels, inplanes, kernel_size=7, stride=2,
                                     padding=3, bias=False)),
                 ('bn1', nn.BatchNorm2d(inplanes)),
                 ('relu1', nn.ReLU(inplace=True)),
@@ -290,7 +292,8 @@ class SENet(nn.Module):
 
 @BACKBONE_REGISTRY.register('se_resnext50')
 def build_se_resnext50(backbone_cfg: CfgNode) -> nn.Module:
-    model = SENet(SEResNeXtBottleneck, [3, 4, 6, 3], groups=32, reduction=16,
+    rgb = backbone_cfg.RGB
+    model = SENet(SEResNeXtBottleneck, [3, 4, 6, 3], rgb=rgb, groups=32, reduction=16,
                   inplanes=64, input_3x3=False,
                   downsample_kernel_size=1, downsample_padding=0)
 
