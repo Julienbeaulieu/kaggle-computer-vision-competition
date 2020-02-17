@@ -14,9 +14,11 @@ Options:
 
 
 import os
+import time
 import pickle
 import torch
 from docopt import docopt
+from apex import amp
 from src.modeling.meta_arch.build import build_model
 from src.data.bengali_data import build_data_loader
 from src.modeling.solver.optimizer import build_optimizer
@@ -51,11 +53,27 @@ def train(cfg: CfgNode):
     # DATA LOADER
     train_data = pickle.load(open(train_path, 'rb'))
     val_data = pickle.load(open(val_path, 'rb'))
+
+    # witchcraft: only train on few classes
+    focus_cls = cfg.DATASET.FOCUS_CLASS
+    if len(focus_cls) > 0:
+        train_data = [x for x in train_data if x[1][0] in focus_cls]
+        val_data = [x for x in val_data if x[1][0] in focus_cls]
+
     train_loader = build_data_loader(train_data, cfg.DATASET, True)
     val_loader = build_data_loader(val_data, cfg.DATASET, False)
 
     # MODEL
     model = build_model(cfg.MODEL)
+    solver_cfg = cfg.MODEL.SOLVER
+    loss_fn = solver_cfg.LOSS.NAME
+    if loss_fn == 'weighted_focal_loss':
+        last_layer = model.head.fc_layers[-1]
+        for m in last_layer.modules():
+            print(m)
+            if isinstance(m, torch.nn.Linear):
+                torch.nn.init.constant_(m.bias, -3.0)
+
     current_epoch = 0
     if cfg.RESUME_PATH != "":
         checkpoint = torch.load(cfg.RESUME_PATH, map_location='cpu')
@@ -64,12 +82,16 @@ def train(cfg: CfgNode):
     _ = model.cuda()
 
     # SOLVER EVALUATOR
-    solver_cfg = cfg.MODEL.SOLVER
+    use_amp = solver_cfg.AMP
     optimizer = build_optimizer(model, solver_cfg)
     evaluator = build_evaluator(solver_cfg)
     evaluator.float().cuda()
     total_epochs = solver_cfg.TOTAL_EPOCHS
+    if use_amp:
+        opt_level = 'O1'
+        model, optimizer = amp.initialize(model, optimizer, opt_level=opt_level)
 
+    s_time = time.time()
     for epoch in range(current_epoch, total_epochs):
         model.train()
         print('Start epoch', epoch)
@@ -85,12 +107,19 @@ def train(cfg: CfgNode):
 
             eval_result = evaluator(grapheme_logits, vowel_logits, consonant_logits, labels)
             optimizer.zero_grad()
-            eval_result['loss'].backward()
+            loss = eval_result['loss']
+            if use_amp:
+                with amp.scale_loss(loss, optimizer) as scaled_loss:
+                    scaled_loss.backward()
+            else:
+                loss.backward()
             optimizer.step()
 
             eval_result = {k: eval_result[k].item() for k in eval_result}
             if idx % 100 == 0:
-                print(idx, eval_result['loss'], eval_result['acc'])
+                t_time = time.time()
+                print(idx, eval_result['loss'], eval_result['acc'], t_time-s_time)
+                s_time = time.time()
 
         train_result = evaluator.evalulate_on_cache()
         train_total_err = train_result['loss']

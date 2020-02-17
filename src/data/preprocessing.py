@@ -3,7 +3,7 @@ from numpy import ndarray
 from yacs.config import CfgNode
 from albumentations import OneOf, Compose, MotionBlur, MedianBlur, Blur, RandomBrightnessContrast, GaussNoise, \
     GridDistortion, Rotate
-from typing import Union
+from typing import Union, List
 
 from cv2 import resize
 
@@ -39,6 +39,9 @@ class Preprocessor(object):
         self.to_rgb = dataset_cfg.TO_RGB
         self.normalize_mean = dataset_cfg.get('NORMALIZE_MEAN')
         self.normalize_std = dataset_cfg.get('NORMALIZE_STD')
+        if not self.to_rgb:
+            self.normalize_mean = np.mean(self.normalize_mean)
+            self.normalize_std = np.mean(self.normalize_std)
 
     @staticmethod
     def generate_color_augmentation(aug_cfg: CfgNode) -> Union[Compose, None]:
@@ -115,6 +118,8 @@ class Preprocessor(object):
         # to RGB
         if self.to_rgb:
             x = np.repeat(np.expand_dims(x, axis=-1), 3, axis=-1)
+        else:
+            x = np.expand_dims(x, axis=-1)
 
         if not normalize:
             return x

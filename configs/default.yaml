@@ -31,12 +31,14 @@ DATASET:
   RESIZE_SHAPE:
   - 128
   - 128
+  FOCUS_CLASS: []
 MODEL:
   META_ARCHITECTURE: baseline
   NORMALIZATION_FN: BN
   BACKBONE:
     NAME: mobilenet_v2
     PRETRAINED_PATH: C:\Users\mingy\Documents\ml_data\torchvision_models\mobilenet_v2-b0353104.pth
+    RGB: true
   HEAD:
     NAME: simple_head
     ACTIVATION: leaky_relu
@@ -51,10 +53,13 @@ MODEL:
     - 11
     - 7
   SOLVER:
-    LABELS_WEIGHTS_PATH: C:/Users/mingy/Documents/ml_data/bengali/labels_weights.p
     TOTAL_EPOCHS: 40
     OPTIMIZER: adam
     BASE_LR: 0.001
-    LOSS_FN: xentropy
+    AMP: false
+    LOSS:
+      LABELS_WEIGHTS_PATH: C:/Users/mingy/Documents/ml_data/bengali/labels_weights.p
+      NAME: xentropy
+      OHEM_RATE: 1.0
 OUTPUT_PATH: ''
 RESUME_PATH: ''

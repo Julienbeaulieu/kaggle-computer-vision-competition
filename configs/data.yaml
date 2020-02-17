@@ -5,4 +5,5 @@ MODEL:
   BACKBONE:
     PRETRAINED_PATH: '/dataext/ming_data/torch_models/mobilenet_v2-b0353104.pth'
   SOLVER:
-    LABELS_WEIGHTS_PATH: '/dataext/ming_data/bengali/labels_weights.p'
+    LOSS:
+      LABELS_WEIGHTS_PATH: '/dataext/ming_data/bengali/labels_weights.p'
