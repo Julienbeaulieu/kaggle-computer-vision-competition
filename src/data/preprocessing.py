@@ -3,6 +3,7 @@ from numpy import ndarray
 from yacs.config import CfgNode
 from albumentations import OneOf, Compose, MotionBlur, MedianBlur, Blur, RandomBrightnessContrast, GaussNoise, \
     GridDistortion, Rotate
+from .grid_mask import  GridMask
 from typing import Union, List
 
 from cv2 import resize
@@ -64,7 +65,8 @@ class Preprocessor(object):
 
         if aug_cfg.GAUSS_NOISE_PROB > 0:
             color_aug_list.append(GaussNoise(p=aug_cfg.GAUSS_NOISE_PROB))
-
+        if aug_cfg.GRID_MASK_PROB > 0:
+            color_aug_list.append(GridMask(num_grid=(3, 7), p=aug_cfg.GRID_MASK_PROB))
         if len(color_aug_list) > 0:
             color_aug = Compose(color_aug_list, p=1)
             return color_aug
@@ -108,12 +110,12 @@ class Preprocessor(object):
         if self.crop:
             x = content_crop(x)
 
+        # resize
+        x = resize(x, self.resize_shape)
+
         # color augment
         if is_training and self.color_aug is not None:
             x = self.color_aug(image=x)['image']
-
-        # resize
-        x = resize(x, self.resize_shape)
 
         # to RGB
         if self.to_rgb:

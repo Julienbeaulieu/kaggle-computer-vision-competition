@@ -7,6 +7,7 @@ from yacs.config import CfgNode
 from typing import List, Dict, Union
 from sklearn.metrics.classification import classification_report
 from .loss import WeightedFocalLoss, SoftMaxCE
+from .mixup_evaluation import MultiHeadsMixUpEval
 
 
 class EvalBlock(nn.Module):
@@ -140,8 +141,12 @@ class MultiHeadsEval(nn.Module):
         return result
 
 
-def build_evaluator(solver_cfg: CfgNode) -> MultiHeadsEval:
-    return MultiHeadsEval(solver_cfg)
+def build_evaluator(solver_cfg: CfgNode):
+
+    if solver_cfg.MIXUP:
+        return MultiHeadsEval(solver_cfg), MultiHeadsMixUpEval(solver_cfg)
+    else:
+        return MultiHeadsEval(solver_cfg), None
 
 
 def clf_result_helper(clf_result: Dict, preds_labels: List, pred_key: str, label_key: str):

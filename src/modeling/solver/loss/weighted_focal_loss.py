@@ -35,7 +35,8 @@ class WeightedFocalLoss(torch.nn.Module):
         #  pt = p * targets + (1 - p) * (1 - targets)
         #  modulator = (1 - pt)**gamma
         # I don't know how,  I don't know why
-        modulator = torch.exp(-self.gamma * targets * logits - self.gamma * torch.log1p(torch.exp(-1 * logits)))
+        modulator = torch.exp(
+            -self.gamma * targets * logits - self.gamma * torch.log1p(torch.exp(-1 * logits)))
 
         loss = modulator * ce_loss
         loss = loss.sum(dim=1)
