@@ -1,6 +1,7 @@
 from yacs.config import CfgNode as ConfigurationNode
 
-# YACS overwrite these settings using YAML
+# YACS overwrite these settings using YAML, all YAML variables MUST BE defined here first
+# as this is the master list of ALL attributes.
 
 __C = ConfigurationNode()
 
@@ -34,6 +35,8 @@ __C.DATASET.NORMALIZE_STD = [0.229, 0.224, 0.225]
 __C.DATASET.FOCUS_CLASS = []
 
 __C.MODEL = ConfigurationNode()
+
+__C.MODEL.PARALLEL = False
 __C.MODEL.META_ARCHITECTURE = 'baseline'
 __C.MODEL.NORMALIZATION_FN = 'BN'
 

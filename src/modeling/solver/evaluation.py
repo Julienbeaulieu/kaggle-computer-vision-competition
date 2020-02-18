@@ -5,7 +5,7 @@ from torch import nn
 from collections import Counter
 from yacs.config import CfgNode
 from typing import List, Dict, Union
-from sklearn.metrics.classification import classification_report
+from sklearn.metrics import classification_report
 from .loss import WeightedFocalLoss, SoftMaxCE
 
 

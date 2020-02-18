@@ -66,7 +66,10 @@ def build_data_loader(data_list: List, data_cfg: CfgNode, is_training: bool) -> 
     dataset = BengaliDataset(data_list, data_cfg, is_training)
     collator = BengaliDataBatchCollator()
     batch_size = data_cfg.BATCH_SIZE
+
+    # limit the number of works based on CPU number.
     num_workers = min(batch_size, data_cfg.CPU_NUM)
+
     data_loader = DataLoader(dataset, batch_size=batch_size, shuffle=is_training, collate_fn=collator,
                              num_workers=num_workers)
     return data_loader

@@ -31,3 +31,8 @@ opencv-python
 # e.g. conda install pytorch torchvision cudatoolkit=10.1 -c pytorch
 sklearn
 albumentations
+
+docopt
+tensorboard
+
+fvcore

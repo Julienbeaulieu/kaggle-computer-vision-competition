@@ -18,8 +18,8 @@ PATH_DATA = os.getenv("PATH_DATA_INTERIM")
 
 def get_labels(input_p_data):
     """
-    Retrieve the labels of a p file based dataframe and return as a dataframe.
-    :return:
+    Retrieve the Bengali Grapheme labels of a p file based dataframe and return as a dataframe.
+    :return: data frame containing the classes of the P file
     """
     classes_train = list(list(zip(*input_p_data))[1])
     df = pd.DataFrame(classes_train)
@@ -36,7 +36,7 @@ def filter_label_df_index(df_input, index_root, index_vowel, index_consonant) ->
     :param index_consonant:
     :return:
     """
-    index_relevant = df_input.index [df_input.grapheme_root.eq(index_root) &
+    index_relevant = df_input.index[df_input.grapheme_root.eq(index_root) &
                                   df_input.vowel_diacritic.eq(index_vowel) &
                                   df_input.consonant_diacritic.eq(index_consonant)]
     return index_relevant
@@ -76,7 +76,6 @@ def compute_labeled_weights():
 
     pickle.dump(weights, open(os.path.join(PATH_DATA, 'labels_weights.p'), 'wb'))
 
-    os.path.join(PATH_DATA, 'labels_weights.p')
 
 if __name__ == "__main__":
     log_fmt = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
