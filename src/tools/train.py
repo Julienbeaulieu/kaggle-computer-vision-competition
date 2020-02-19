@@ -158,6 +158,7 @@ def train(cfg: CfgNode):
                 s_time = time.time()
         if mixup_training:
             train_result = mixup_evaluator.evalulate_on_cache()
+            mixup_evaluator.clear_cache()
         else:
             train_result = evaluator.evalulate_on_cache()
         train_total_err = train_result['loss']
