@@ -1,4 +1,6 @@
 from yacs.config import CfgNode as ConfigurationNode
+from src.data.load_datasets import update_cfg_using_dotenv
+from pathlib import Path
 
 # YACS overwrite these settings using YAML, all YAML variables MUST BE defined here first
 # as this is the master list of ALL attributes.
@@ -7,7 +9,7 @@ __C = ConfigurationNode()
 
 # importing default as a global singleton
 cfg = __C
-__C.DESCRIPTION = 'Default config'
+__C.DESCRIPTION = 'Default config from the Singleton'
 __C.DATASET = ConfigurationNode()
 __C.DATASET.NAME = 'bengali_kaggle'
 __C.DATASET.DEFAULT_SIZE = (137, 236)
@@ -28,7 +30,7 @@ __C.DATASET.AUGMENTATION.ROTATION_PROB = 1
 __C.DATASET.AUGMENTATION.ROTATION_DEGREE = 20
 
 __C.DATASET.BATCH_SIZE = 32
-__C.DATASET.CPU_NUM = 4
+__C.DATASET.CPU_NUM = 1
 __C.DATASET.TO_RGB = True
 __C.DATASET.NORMALIZE_MEAN = [0.485, 0.456, 0.406]
 __C.DATASET.NORMALIZE_STD = [0.229, 0.224, 0.225]
@@ -73,6 +75,7 @@ __C.MODEL.SOLVER.LOSS.FOCAL_LOSS.ALPHA = -1
 __C.OUTPUT_PATH = ''
 __C.RESUME_PATH = ''
 
+
 def get_cfg_defaults():
   """
   Get a yacs CfgNode object with default values for my_project.
@@ -81,3 +84,39 @@ def get_cfg_defaults():
   # This is for the "local variable" use pattern recommended by the YACS repo.
   # It will be subsequently overwritten with local YAML.
   return __C.clone()
+
+
+def combine_cfgs(path_cfg_data: Path=None, path_cfg_override: Path=None):
+    """
+    An internal facing routine thaat combined CFG in the order provided.
+    :param path_output: path to output files
+    :param path_cfg_data: path to path_cfg_data files
+    :param path_cfg_override: path to path_cfg_override actual
+    :return: cfg_base incorporating the overwrite.
+    """
+
+    # Path order of precedence is:
+    # Priority 1, 2, 3, 4 respectively
+    # .env > other CFG YAML > data.yaml > default.yaml
+
+    # Load default lowest tier one:
+    # Priority 4:
+    cfg_base = get_cfg_defaults()
+
+    # Merge from the path_data
+    # Priority 3:
+    if path_cfg_data is not None and path_cfg_data.exists():
+        cfg_base.merge_from_file(path_cfg_data.absolute())
+
+    # Merge from other cfg_path files to further reduce effort
+    # Priority 2:
+    if path_cfg_override is not None and path_cfg_override.exists():
+        cfg_base.merge_from_file(path_cfg_override.absolute())
+
+    # Merge from .env
+    # Priority 1:
+    list_cfg = update_cfg_using_dotenv()
+    if list_cfg is not []:
+        cfg_base.merge_from_list(list_cfg)
+
+    return cfg_base
