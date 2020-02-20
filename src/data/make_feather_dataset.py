@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+
+# WIP - does not work for now
 import click
 import logging
 from pathlib import Path
@@ -13,15 +15,24 @@ import numpy as np
 import pandas as pd
 
 
-load_dotenv(find_dotenv())
-PATH_DATA_RAW = Path(os.getenv("PATH_DATA_RAW"))
-PATH_DATA_INTERIM = Path(os.getenv("PATH_DATA_INTERIM"))
+# load_dotenv(find_dotenv())
+# PATH_DATA_RAW = Path(os.getenv("PATH_DATA_RAW"))
+# PATH_DATA_INTERIM = Path(os.getenv("PATH_DATA_INTERIM"))
+
+# PATH_DATA_RAW = r'C:\Users\nasty\data-science\kaggle\bengali\data\raw'
+# PATH_DATA_INTERIM = r'C:\Users\nasty\data-science\kaggle\bengali\data\interim'
+
+PATH_DATA_RAW = Path('C:/Users/nasty/data-science/kaggle/bengali/data/raw')
+PATH_DATA_INTERIM = Path('C:/Users/nasty/data-science/kaggle/bengali/data/interim')
+
+# featherdir
+FEATHERDIR = Path('C:/Users/nasty/data-science/kaggle/bengali/data/interim/feather/')
 
 # Template train data image file variable to be updated. i.e. the ID part
-TRAIN_PARQUET_FORM = 'train_image_data_ID.parquet'
+TRAIN_FEATHER_FORM = 'train_image_data_ID.feather'
 
 # Template test data image file variable to be updated. i.e. the ID part
-TEST_PARQUET_FORM = 'test_image_data_ID.parquet'
+TEST_FEATHER_FORM = 'test_image_data_ID.feather'
 
 LABEL_PATH = 'train.csv'
 
@@ -36,7 +47,7 @@ def train2image(vector_image: pd.DataFrame):
 
 
 
-def load_images(train_test, indices=['0', '1', '2', '3']):
+def load_images(train_test):
     """
     Utility function to Load the images from both the location and return them
     :param train_test:
@@ -45,21 +56,21 @@ def load_images(train_test, indices=['0', '1', '2', '3']):
 
     # ???
     path_form = {
-        'train': TRAIN_PARQUET_FORM,
-        'test': TEST_PARQUET_FORM
+        'train': TRAIN_FEATHER_FORM,
+        'test': TEST_FEATHER_FORM
     }[train_test]
 
     imgs_list = []
 
     # sequentially load all four files.
-    for id in indices:
+    for id in ['0', '1', '2', '3']:
 
         # Form the path of the files.
-        path = PATH_DATA_RAW / path_form.replace('ID', id)
+        path = FEATHERDIR / path_form.replace('ID', id)
 
         print('Loading', path)
 
-        df = pd.read_parquet(path)
+        df = pd.read_feather(path)
 
         imgs = df.iloc[:, 1:].to_numpy()
 
@@ -80,19 +91,17 @@ def load_labels():
     labels = labels.iloc[:, 1:4].to_numpy()
     return labels
 
-def dump_image_labels(train_test, indices=['0', '1', '2', '3']):
+def dump_image_labels():
     """
-     A combined function to load both train and label?
+     A combined function to load both trian and label?
     :return:
     """
     # Load all images into a variable.
-    imgs = load_images(train_test, indices=indices)
+    imgs = load_images('train')
+    labels = load_labels()
+    all_data = list(zip(imgs, labels))
 
-    if train_test == 'train':
-        labels = load_labels()
-        all_data = list(zip(imgs, labels))
-
-    pickle.dump(all_data, open(PATH_DATA_INTERIM / {train_test}'_all_data.p', 'wb'))
+    all_data.to_feather('PATH_DATA_INTERIM / all_feather_data.feather')
     return all_data
 
 def split_train_test():
@@ -106,8 +115,8 @@ def split_train_test():
     train_size = int(data_size * 0.8)
     train_data = all_data[:train_size]
     val_data = all_data[train_size:]
-    pickle.dump(train_data, open(PATH_DATA_INTERIM / 'train_data.p', 'wb'))
-    pickle.dump(val_data, open(PATH_DATA_INTERIM / 'val_data.p', 'wb'))
+    write_feather(train_data, 'PATH_DATA_INTERIM / train_data.feather')
+    write_feather(val_data, 'PATH_DATA_INTERIM / val_data.feather')
 
 
 @click.command()

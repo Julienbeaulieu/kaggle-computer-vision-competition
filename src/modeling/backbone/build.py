@@ -14,3 +14,4 @@ def build_backbone(backbone_cfg: CfgNode) -> nn.Module:
     """
     backbone = BACKBONE_REGISTRY[backbone_cfg.NAME](backbone_cfg)
     return backbone
+

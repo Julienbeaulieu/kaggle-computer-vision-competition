@@ -7,15 +7,16 @@ from dotenv import find_dotenv, load_dotenv
 import click
 import logging
 from pathlib import Path
+
 # find .env automagically by walking up directories until it's found, then
 # load up the .env entries as environment variables
 load_dotenv(find_dotenv())
 
-PATH_DATA = os.getenv("PATH_DATA_INTERIM")
+PATH_DATA = os.getenv(r"PATH_DATA_INTERIM")
 
-@click.command()
+#@click.command()
 def compute_labeled_weights():
-    # Load all data.
+    # Load all data.s
     all_data = pickle.load(open(os.path.join(PATH_DATA, 'all_data.p'), 'rb'))
 
     # for each label load all
@@ -48,7 +49,7 @@ def compute_labeled_weights():
 
 if __name__=="__main__":
     log_fmt = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-    logging.basicConfig(level=logging.INFO, format=log_fmt)
+    logging.basicConfig(level=logging.INFO, format=log_fmt) # info = on log tout
 
     # not used in this stub but often useful for finding various files
     project_dir = Path(__file__).resolve().parents[2]

@@ -2,7 +2,7 @@ import numpy as np
 from numpy import ndarray
 from yacs.config import CfgNode
 from albumentations import OneOf, Compose, MotionBlur, MedianBlur, Blur, RandomBrightnessContrast, GaussNoise, \
-    GridDistortion, Rotate
+    GridDistortion, Rotate, CoarseDropout
 from typing import Union
 
 import os
@@ -12,8 +12,6 @@ from cv2 import resize
 import time
 
 sys.path.append('../')
-
-
 def content_crop(img: ndarray) -> ndarray:
     """
     cut out the section of image where there is the most of character
@@ -40,6 +38,7 @@ class Preprocessor(object):
         aug_cfg = dataset_cfg.AUGMENTATION
         self.color_aug = self.generate_color_augmentation(aug_cfg)
         self.shape_aug = self.generate_shape_augmentation(aug_cfg)
+        self.cutout_aug = self.generate_cutout_augmentation(aug_cfg)
         self.resize_shape = dataset_cfg.RESIZE_SHAPE
         self.crop = dataset_cfg.CONCENTRATE_CROP
         self.to_rgb = dataset_cfg.TO_RGB
@@ -94,6 +93,19 @@ class Preprocessor(object):
             return shape_aug
         else:
             return None
+    
+    @staticmethod
+    def generate_cutout_augmentation(aug_cfg):
+        
+        cutout_aug_list = []
+        if aug_cfg.COARSE_DROPOUT_PROB > 0:
+            cutout_aug_list.append(CoarseDropout(max_holes=5, max_height=7, max_width=7, p=aug_cfg.COARSE_DROPOUT_PROB))
+                                  
+        if len(cutout_aug_list) > 0:
+            cutout_aug = Compose(cutout_aug_list, p=1)
+            return cutout_aug
+        else:
+            return None  
 
     def __call__(self, img: ndarray, is_training: bool, normalize: bool = True) -> ndarray:
         """
@@ -114,6 +126,7 @@ class Preprocessor(object):
         # color augment
         if is_training and self.color_aug is not None:
             x = self.color_aug(image=x)['image']
+            x = self.cutout_aug(image=x)['image']
 
         # resize
         x = resize(x, self.resize_shape)

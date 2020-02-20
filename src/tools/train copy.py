@@ -6,7 +6,7 @@ from src.modeling.meta_arch.build import build_model
 from src.data.bengali_data import build_data_loader
 from src.modeling.solver.optimizer import build_optimizer
 from src.modeling.solver.evaluation import build_evaluator
-import time
+
 
 def train(cfg):
     # FILES, PATHS
@@ -52,25 +52,15 @@ def train(cfg):
         train_itr = iter(train_loader)
         total_err = 0
         total_acc = 0
-        s = time.time()
-        for i in range(100):
-            inputs, labels = next(train_itr)
-        t = time.time()
-        print('batch loading time: ' + str(t-s))
         for idx, (inputs, labels) in enumerate(train_itr):
 
             # compute
             input_data = inputs.float().cuda()
             labels = labels.cuda()
+            grapheme_logits, vowel_logits, consonant_logits = model(input_data)
 
-            s = time.time()
-            for i in range(100):
-                grapheme_logits, vowel_logits, consonant_logits = model(input_data)
-
-                eval_result = evaluator(grapheme_logits, vowel_logits, consonant_logits, labels)
-                optimizer.zero_grad()
-            t = time.time()
-            print('batch running time: ' + str(t-s))
+            eval_result = evaluator(grapheme_logits, vowel_logits, consonant_logits, labels)
+            optimizer.zero_grad()
             eval_result['loss'].backward()
             optimizer.step()
 
@@ -90,8 +80,8 @@ def train(cfg):
         total_err = 0
         total_acc = 0
         with torch.no_grad():
-            for idx, (inputs, labels) in enumerate(val_itr):
-                input_data = inputs.float().cuda()
+            for idx, (image_id, images, label1, label2, label3) in enumerate(val_itr):
+                input_data = images.float().cuda()
                 labels = labels.cuda()
                 grapheme_logits, vowel_logits, consonant_logits = model(input_data)
                 eval_result = evaluator(grapheme_logits, vowel_logits, consonant_logits, labels)
