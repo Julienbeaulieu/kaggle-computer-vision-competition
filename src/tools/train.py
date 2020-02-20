@@ -6,7 +6,6 @@ from src.modeling.meta_arch.build import build_model
 from src.data.bengali_data import build_data_loader
 from src.modeling.solver.optimizer import build_optimizer
 from src.modeling.solver.evaluation import build_evaluator
-import time
 
 def train(cfg):
     # FILES, PATHS
@@ -52,25 +51,19 @@ def train(cfg):
         train_itr = iter(train_loader)
         total_err = 0
         total_acc = 0
-        s = time.time()
-        for i in range(100):
-            inputs, labels = next(train_itr)
-        t = time.time()
-        print('batch loading time: ' + str(t-s))
+        inputs, labels = next(train_itr)
+
         for idx, (inputs, labels) in enumerate(train_itr):
 
             # compute
             input_data = inputs.float().cuda()
             labels = labels.cuda()
 
-            s = time.time()
-            for i in range(100):
-                grapheme_logits, vowel_logits, consonant_logits = model(input_data)
+            grapheme_logits, vowel_logits, consonant_logits = model(input_data)
 
-                eval_result = evaluator(grapheme_logits, vowel_logits, consonant_logits, labels)
-                optimizer.zero_grad()
-            t = time.time()
-            print('batch running time: ' + str(t-s))
+            eval_result = evaluator(grapheme_logits, vowel_logits, consonant_logits, labels)
+            optimizer.zero_grad()
+
             eval_result['loss'].backward()
             optimizer.step()
 
