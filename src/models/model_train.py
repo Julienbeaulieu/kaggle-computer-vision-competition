@@ -2,14 +2,14 @@
 
 train model
 Usage:
-    train.py -path_output=<path> [--data_cfg=<path>]  [--cfg=<path>]
+    train.py -path_output=<path> [--path_cfg_data=<path>]  [--path_cfg_override=<path>]
     train.py -h | --help
 
 Options:
     -h --help               show this screen help
     -path_output=<path>               output path
-    --data_cfg=<path>       data config path [default: configs/data.yaml]
-    --cfg=<path>            training config path
+    --path_cfg_data=<path>       data config path [default: configs/data.yaml]
+    --path_cfg_override=<path>            training config path
 """
 
 # Adapted from Ming's /tools/train.py
@@ -31,54 +31,23 @@ from pathlib import Path
 from dotenv import find_dotenv, load_dotenv
 
 # For MLFlow integration
-from mlflow import log_metric, log_param, log_artifact
+from mlflow import log_metrics, log_param, log_artifact
 
 
 # For Tensorboard integration
 from torch.utils.tensorboard import SummaryWriter
 
+from src.config.config import combine_cfgs
 
 @click.command()
-@click.argument('path_output', type=click.Path(exists=False))
-@click.option('--data_cfg', type=click.Path(exists=True), help="CFG file containing data path node which will be used to overwrite default behaviour.")
-@click.option("--cfg", type=click.Path(exists=True), help="CFG file which will be used to overwrite default and data behaviour.")
+@click.argument('path_output', type=click.Path(exists=True))
+@click.option('--path_cfg_data', type=click.Path(exists=True), help="CFG file containing data path node which will be used to overwrite default behaviour.")
+@click.option("--path_cfg_override", type=click.Path(exists=True), help="CFG file which will be used to overwrite default and data behaviour.")
 def handle_cfg(path_output, data_cfg, cfg):
 
-    # path to output files
-    output_path = path_output
+    cfg = combine_cfgs(data_cfg, cfg)
 
-    # path to cfg_data files
-    data_path = data_cfg
-
-    # path to cfg actual
-    cfg_path = cfg
-
-    # Path order of precedence is:
-    # Priority 1, 2, 3, 4 respectively
-    # .env > other CFG YAML > data.yaml > default.yaml
-
-    # Load default lowest tier one:
-    # Priority 4:
-    cfg = get_cfg_defaults()
-
-    # Merge from the path_data
-    # Priority 3:
-    if data_path is not None and os.path.exists(data_path):
-        cfg.merge_from_file(data_path)
-
-    # Merge from other cfg_path files to further reduce effort
-    # Priority 2:
-    if cfg_path is not None and os.path.exists(cfg_path):
-        cfg.merge_from_file(cfg_path)
-
-    # Merge from .env
-    # Priority 1:
-    list_cfg = update_cfg_using_dotenv()
-    if list_cfg is not []:
-        cfg.merge_from_list(list_cfg)
-
-    #
-    cfg.OUTPUT_PATH = output_path
+    cfg.OUTPUT_PATH = path_output
 
     # Execute training base on the configuration
     train(cfg)
@@ -91,7 +60,7 @@ def train(cfg: CfgNode):
     :param cfg:
     :return:
     """
-    # Check valid output path, set path from the cfg modules respectively
+    # Check valid output path, set path from the path_cfg_override modules respectively
     assert cfg.OUTPUT_PATH != ''
     path_output = cfg.OUTPUT_PATH  # output folder
     path_train = cfg.DATASET.TRAIN_DATA_PATH  # training data folder
@@ -115,9 +84,7 @@ def train(cfg: CfgNode):
     if not os.path.exists(backup_dir):
         os.makedirs(backup_dir)
 
-
     writer_tensorboard = SummaryWriter(log_dir=Path(results_dir / "logs_tensorflow"))
-
 
     # Now that CFG has been properly merged with new data along the way, time to dump a version of it into a string for trackability purposes.
     cfg.dump(stream=open(os.path.join(results_dir, f'config{name_timestamp}.yaml'), 'w'))
@@ -206,16 +173,23 @@ def train(cfg: CfgNode):
 
 
         train_total_err = train_result['loss']
-        writer_tensorboard.add_scalar('loss', train_total_err)
-        log_metric('loss', train_total_err)
+        writer_tensorboard.add_scalar('Loss/train', train_total_err, global_step=epoch)
+        #log_metric('loss', train_total_err)
 
         train_total_acc = train_result['acc']
-        writer_tensorboard.add_scalar('acc', train_total_acc)
-        log_metric('acc', train_total_acc)
+        writer_tensorboard.add_scalar('Accuracy/train', train_total_acc, global_step=epoch)
+        #log_metric('acc', train_total_acc)
 
         train_kaggle_score = train_result['kaggle_score']
-        writer_tensorboard.add_scalar('kaggle_score', train_kaggle_score)
-        log_metric('kaggle_score', train_kaggle_score)
+        writer_tensorboard.add_scalar('Kaggle_Score/Train', train_kaggle_score, global_step=epoch)
+        #log_metric('kaggle_score', train_kaggle_score)
+
+        dict_metrics_train={
+            'Loss/Train', train_total_err,
+            'Accuracy/Train', train_total_acc,
+            'Kaggle_Score/Train', train_kaggle_score,
+        }
+        log_metrics(dict_metrics_train, step=epoch)
 
         print(f"Epoch {epoch} Training, Loss {train_total_err}, Acc {train_total_acc}")
         evaluator.clear_cache()
@@ -237,17 +211,23 @@ def train(cfg: CfgNode):
         val_result = evaluator.evalulate_on_cache()
 
         val_total_err = val_result['loss']
-        writer_tensorboard.add_scalar('val_loss', val_total_err)
-        log_metric('val_loss', val_total_err)
+        writer_tensorboard.add_scalar('Loss/Val', val_total_err, global_step=epoch)
 
         val_total_acc = val_result['acc']
-        writer_tensorboard.add_scalar('val_total_acc', val_total_acc)
-        log_metric('val_acc', val_total_acc)
+        writer_tensorboard.add_scalar('Accuracy/Val', val_total_acc, global_step=epoch)
 
         val_kaggle_score = val_result['kaggle_score']
-        writer_tensorboard.add_scalar('val_kaggle_score', val_kaggle_score)
-        log_metric('val_kaggle_score', val_kaggle_score)
+        writer_tensorboard.add_scalar('Kaggle_Score/Val', val_kaggle_score, global_step=epoch)
 
+        dict_metrics_train={
+            'Loss/Validation', val_total_err,
+            'Accuracy/Validation', val_total_acc,
+            'Kaggle_Score/Validation', val_kaggle_score,
+        }
+        log_metrics(dict_metrics_train, step=epoch)
+
+        # Write to disk.
+        writer_tensorboard.flush()
 
         print(f"Epoch {epoch} Eval, Loss {val_total_err}, Acc {val_total_acc}")
         evaluator.clear_cache()
@@ -292,8 +272,6 @@ def train(cfg: CfgNode):
 
 if __name__ == '__main__':
 
-    #arguments = docopt(__doc__, argv=None, help=True, version=None, options_first=False)
-
-    # Obtain some key arguments with regard to the path of output, data, cfg files.
+    # Obtain some key arguments with regard to the path of output, data, path_cfg_override files.
     handle_cfg()
 
