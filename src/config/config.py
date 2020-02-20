@@ -28,7 +28,7 @@ __C.DATASET.AUGMENTATION.ROTATION_PROB = 1
 __C.DATASET.AUGMENTATION.ROTATION_DEGREE = 20
 __C.DATASET.AUGMENTATION.COARSE_DROPOUT_PROB = 0.4
 
-__C.DATASET.BATCH_SIZE = 16
+__C.DATASET.BATCH_SIZE = 32
 __C.DATASET.CPU_NUM = 1
 __C.DATASET.TO_RGB = True
 __C.DATASET.NORMALIZE_MEAN = [0.485, 0.456, 0.406]
@@ -39,14 +39,14 @@ __C.MODEL.META_ARCHITECTURE = 'baseline'
 __C.MODEL.NORMALIZATION_FN = 'BN'
 
 __C.MODEL.BACKBONE = ConfigurationNode()
-__C.MODEL.BACKBONE.NAME = 'densenet121'
-__C.MODEL.BACKBONE.PRETRAINED_PATH = r'C:/Users/nasty/data-science/kaggle/bengali/bengali-julien/models/densenet121.pth'
+__C.MODEL.BACKBONE.NAME = 'mobilenet_v2'
+__C.MODEL.BACKBONE.PRETRAINED_PATH = r'C:/Users/nasty/data-science/kaggle/bengali/bengali-julien/models/mobilenet_v2-b0353104.pth'
 
 __C.MODEL.HEAD = ConfigurationNode()
 __C.MODEL.HEAD.NAME = 'simple_head'
 __C.MODEL.HEAD.ACTIVATION = 'leaky_relu'
 __C.MODEL.HEAD.OUTPUT_DIMS = [168, 11, 7]
-__C.MODEL.HEAD.INPUT_DIM = 1000  # densenet121
+__C.MODEL.HEAD.INPUT_DIM = 1280  # 1000 = densenet121
 __C.MODEL.HEAD.HIDDEN_DIMS = [512, 256]
 __C.MODEL.HEAD.BN = True
 __C.MODEL.HEAD.DROPOUT = -1
@@ -58,7 +58,7 @@ __C.MODEL.SOLVER.LOSS_FN = 'xentropy'
 __C.MODEL.SOLVER.TOTAL_EPOCHS = 5
 __C.MODEL.SOLVER.LABELS_WEIGHTS_PATH = 'C:/Users/nasty/data-science/kaggle/bengali/data/interim/labels_weights.p'
 
-__C.OUTPUT_PATH = 'C:/Users/nasty/data-science/kaggle/bengali/bengali-julien/models'
+__C.OUTPUT_PATH = 'C:/Users/nasty/data-science/kaggle/bengali-git/bengali.ai/models'
 __C.RESUME_PATH = ''
 
 def get_cfg_defaults():
