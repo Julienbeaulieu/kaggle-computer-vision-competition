@@ -1,7 +1,7 @@
 import torch
 import pickle
 import numpy as np
-from typing import List, Dict
+from typing import List, Dict, Union
 from yacs.config import CfgNode
 from torch import nn
 from sklearn.metrics.classification import classification_report
@@ -13,16 +13,36 @@ LOSS_FN = {
 
 class EvalBlock(nn.Module):
 
-    def __init__(self, loss_fn: str, weights: List[float]):
+    def __init__(self, solver_cfg: CfgNode, weights: Union[None, List[float]]):
         super(EvalBlock, self).__init__()
-        self.loss_fn = LOSS_FN[loss_fn](torch.tensor(weights))
+        loss_fn = solver_cfg.LOSS_FN 
+        if weights is not None:
+            self.loss_fn = LOSS_FN[loss_fn](torch.tensor(weights), reduction='none')
+        else:
+            self.loss_fn = LOSS_FN[loss_fn](reduction='none')
+        self.ohem_rate = solver_cfg.OHEM_RATE
 
     def forward(self, logits, labels):
-        loss = self.loss_fn(logits, labels)
+        losses = self.loss_fn(logits, labels) # CrossEntropyLoss -> takes xentropy(x, y)
+        if self.ohem_rate < 1:
+            loss = self.compute_ohem_loss(losses)
+        else:
+            loss = losses.mean()
         preds = torch.argmax(logits, dim=1)
         corrects = (labels == preds)
         acc = torch.sum(corrects) / (len(corrects) + 0.0)
         return loss, acc
+
+    def compute_ohem_loss(self, losses: torch.Tensor):
+        N = losses.shape[0]
+
+        # What % of examples should we keep for our loss function? 
+        keep_size = int(N*self.ohem_rate)
+        # Get idx of top losses 
+        _, ohem_indices = losses.topk(keep_size)
+        ohem_losses = losses[ohem_indices]
+        loss = ohem_losses.mean()
+        return loss
 
 
 class MultiHeadsEval(nn.Module):
@@ -30,14 +50,19 @@ class MultiHeadsEval(nn.Module):
     def __init__(self, solver_cfg: CfgNode):
         super(MultiHeadsEval, self).__init__()
         weights_path = solver_cfg.LABELS_WEIGHTS_PATH
-        weights_data = pickle.load(open(weights_path, 'rb'))
-        grapheme_weights = weights_data['grapheme']
-        vowel_weights = weights_data['vowel']
-        consonant_weights = weights_data['consonant']
+        if weights_path != '':
+            weights_data = pickle.load(open(weights_path, 'rb'))
+            grapheme_weights = weights_data['grapheme']
+            vowel_weights = weights_data['vowel']
+            consonant_weights = weights_data['consonant']
+        else:
+            grapheme_weights = None
+            vowel_weights = None
+            consonant_weights = None
         loss_fn = solver_cfg.LOSS_FN
-        self.grapheme_eval = EvalBlock(loss_fn, grapheme_weights)
-        self.vowel_eval = EvalBlock(loss_fn, vowel_weights)
-        self.consonant_eval = EvalBlock(loss_fn, consonant_weights)
+        self.grapheme_eval = EvalBlock(solver_cfg, grapheme_weights)
+        self.vowel_eval = EvalBlock(solver_cfg, vowel_weights)
+        self.consonant_eval = EvalBlock(solver_cfg, consonant_weights)
         self.grapheme_logits_cache = []
         self.vowel_logits_cache = []
         self.consonant_logits_cache = []
@@ -47,7 +72,7 @@ class MultiHeadsEval(nn.Module):
 
     def forward(self, grapheme_logits: torch.Tensor, vowel_logits: torch.Tensor, consonant_logits: torch.Tensor,
                 labels: torch.Tensor) -> Dict:
-        # compute loss
+        # compute loss - call EvalBlock's forward function on our 3 classes
         grapheme_loss, grapheme_acc = self.grapheme_eval(grapheme_logits, labels[:, 0])
         vowel_loss, vowel_acc = self.vowel_eval(vowel_logits, labels[:, 1])
         consonant_loss, consonant_acc = self.consonant_eval(consonant_logits, labels[:, 2])
