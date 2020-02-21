@@ -17,7 +17,9 @@ __C.DATASET.VOWEL_SIZE = 11
 __C.DATASET.CONSONANT_SIZE = 7
 __C.DATASET.TRAIN_DATA_PATH = 'C:/Users/nasty/data-science/kaggle/bengali/data/interim/train_data.p'
 __C.DATASET.VAL_DATA_PATH = 'C:/Users/nasty/data-science/kaggle/bengali/data/interim/val_data.p'
-__C.DATASET.TRAIN_DATA_0 = 'C:/Users/nasty/data-science/kaggle/bengali/data/interim/train_data_0.p'
+__C.DATASET.TRAIN_DATA_SAMPLE = 'C:/Users/nasty/data-science/kaggle/bengali/data/interim/train_data_sample.p'
+__C.DATASET.VALID_DATA_SAMPLE = 'C:/Users/nasty/data-science/kaggle/bengali/data/interim/train_data_sample.p'
+
 
 __C.DATASET.AUGMENTATION = ConfigurationNode()
 __C.DATASET.AUGMENTATION.BLURRING_PROB = 0.25
