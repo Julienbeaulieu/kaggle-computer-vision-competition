@@ -55,11 +55,22 @@ MODEL:
     - 7
   SOLVER:
     TOTAL_EPOCHS: 40
-    OPTIMIZER: adam
-    BASE_LR: 0.001
+    OPTIMIZER:
+      BASE_LR: 0.001
+      NAME: adam
+      SGD:
+        MOMENTUM: 0.9
+        NESTEROV: false
+    SCHEDULER:
+      NAME: 'unchanged'
+      LR_REDUCE_GAMMA: 0.1
+      MULTI_STEPS_LR_MILESTONES: []
     MULTI_STEPS_LR_MILESTONES: []
     LR_REDUCE_GAMMA: 0.1
-    MIXUP: false
+    MIXUP_AUGMENT: false
+    MIXUP:
+      ALPHA: 1.0
+      CUTMIX_PROB: 0.0
     AMP: false
     LOSS:
       LABELS_WEIGHTS_PATH: C:/Users/mingy/Documents/ml_data/bengali/labels_weights.p

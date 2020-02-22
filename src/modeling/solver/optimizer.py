@@ -5,35 +5,44 @@ from yacs.config import CfgNode
 from typing import Union
 
 
-def build_optimizer(model: torch.nn.Module, solver_cfg: CfgNode) -> Optimizer:
+def build_optimizer(model: torch.nn.Module, opti_cfg: CfgNode) -> Optimizer:
     """
     simple optimizer builder
     :param model: already gpu pushed model
-    :param solver_cfg:  config node
+    :param opti_cfg:  config node
     :return: the optimizer
     """
     parameters = model.parameters()
-    optimzers = {
-        'adam': torch.optim.Adam,
-        'sgd': torch.optim.SGD
-    }
-    opti_type = solver_cfg.OPTIMIZER
-    lr = solver_cfg.BASE_LR
-    return optimzers[opti_type](parameters, lr=lr)
+    opti_type = opti_cfg.NAME
+    lr = opti_cfg.BASE_LR
+    if opti_type == 'adam':
+        optimizer = torch.optim.Adam(parameters, lr=lr)
+    elif opti_type == 'sgd':
+        sgd_cfg = opti_cfg.SGD
+        momentum = sgd_cfg.MOMENTUM
+        nesterov = sgd_cfg.NESTEROV
+        optimizer = torch.optim.SGD(parameters, lr=lr, momentum=momentum, nesterov=nesterov)
+    else:
+        raise Exception('invalid optimizer, available choices adam/sgd')
+    return optimizer
 
 
-def build_scheduler(optimizer: Optimizer, solver_cfg: CfgNode) -> Union[MultiStepLR, None]:
+def build_scheduler(optimizer: Optimizer, scheduler_cfg: CfgNode) -> Union[MultiStepLR, None]:
     """
 
     :param optimizer:
     :param optimizer: Optimizer
-    :param solver_cfg:
+    :param scheduler_cfg:
     "param solver_cfg: CfgNode
     :return:
     """
-    if len(solver_cfg.MULTI_STEPS_LR_MILESTONES) == 0:
+    scheduler_type = scheduler_cfg.NAME
+    if scheduler_type == 'unchange':
         return None
-    gamma = solver_cfg.LR_REDUCE_GAMMA
-    milestones = solver_cfg.MULTI_STEPS_LR_MILESTONES
-    scheduler = MultiStepLR(optimizer, milestones, gamma=gamma, last_epoch=-1)
-    return scheduler
+    elif scheduler_type == 'multi_steps':
+        gamma = scheduler_cfg.LR_REDUCE_GAMMA
+        milestones = scheduler_cfg.MULTI_STEPS_LR_MILESTONES
+        scheduler = MultiStepLR(optimizer, milestones, gamma=gamma, last_epoch=-1)
+        return scheduler
+    else:
+        raise Exception('scheduler name invalid, choices are unchange/multi_steps')

@@ -21,27 +21,10 @@ from docopt import docopt
 from apex import amp
 from src.modeling.meta_arch.build import build_model
 from src.data.bengali_data import build_data_loader
-from src.modeling.solver.optimizer import build_optimizer, build_scheduler
-from src.modeling.solver.evaluation import build_evaluator
+from src.modeling.solver import build_optimizer, build_scheduler, build_evaluator, MixupAugmenter
+
 from yacs.config import CfgNode
 from src.config import get_cfg_defaults
-
-
-def mixup(data, labels, alpha=1.0):
-    targets1 = labels[:, 0]
-    targets2 = labels[:, 1]
-    targets3 = labels[:, 2]
-    indices = torch.randperm(data.size(0))
-    shuffled_data = data[indices]
-    shuffled_targets1 = targets1[indices]
-    shuffled_targets2 = targets2[indices]
-    shuffled_targets3 = targets3[indices]
-
-    lam = np.random.beta(alpha, alpha)
-    data = data * lam + shuffled_data * (1 - lam)
-    targets = [targets1, shuffled_targets1, targets2, shuffled_targets2, targets3, shuffled_targets3, lam]
-
-    return data, targets
 
 
 def train(cfg: CfgNode):
@@ -83,7 +66,9 @@ def train(cfg: CfgNode):
     # MODEL
     model = build_model(cfg.MODEL)
     solver_cfg = cfg.MODEL.SOLVER
+    total_epochs = solver_cfg.TOTAL_EPOCHS
     loss_fn = solver_cfg.LOSS.NAME
+    # for weighted focal loss, initialize last layer bias weights as constant
     if loss_fn == 'weighted_focal_loss':
         last_layer = model.head.fc_layers[-1]
         for m in last_layer.modules():
@@ -91,30 +76,40 @@ def train(cfg: CfgNode):
                 torch.nn.init.constant_(m.bias, -3.0)
 
     current_epoch = 0
+
     if cfg.RESUME_PATH != "":
         checkpoint = torch.load(cfg.RESUME_PATH, map_location='cpu')
         current_epoch = checkpoint['epoch']
         model.load_state_dict(checkpoint["model_state"])
     _ = model.cuda()
 
-    # SOLVER EVALUATOR
+    # optimizer, scheduler, amp
+    opti_cfg = solver_cfg.OPTIMIZER
+    optimizer = build_optimizer(model, opti_cfg)
+    scheduler_cfg = solver_cfg.SCHEDULER
+    scheduler = build_scheduler(optimizer, scheduler_cfg)
     use_amp = solver_cfg.AMP
-    optimizer = build_optimizer(model, solver_cfg)
-    if cfg.RESUME_PATH != "" and 'optimizer_state' in checkpoint:
-        optimizer.load_state_dict(checkpoint['optimizer_state'])
-
-    scheduler = build_scheduler(optimizer, solver_cfg)
-    if cfg.RESUME_PATH != "" and 'scheduler_state' in checkpoint and scheduler is not None:
-        scheduler.load_state_dict(checkpoint['scheduler_state'])
-
-    mixup_training = solver_cfg.MIXUP
-    evaluator, mixup_evaluator = build_evaluator(solver_cfg)
-    evaluator.float().cuda()
-
-    total_epochs = solver_cfg.TOTAL_EPOCHS
     if use_amp:
         opt_level = 'O1'
         model, optimizer = amp.initialize(model, optimizer, opt_level=opt_level)
+
+    if cfg.RESUME_PATH != "":
+        if 'optimizer_state' in checkpoint:
+            optimizer.load_state_dict(checkpoint['optimizer_state'])
+        if 'scheduler_state' in checkpoint and scheduler is not None:
+            scheduler.load_state_dict(checkpoint['scheduler_state'])
+        if use_amp and 'amp_state' in checkpoint:
+            amp.load_state_dict(checkpoint['amp_state'])
+
+    # evaluator
+    mixup_training = solver_cfg.MIXUP_AUGMENT
+    if mixup_training:
+        mixup_augmenter = MixupAugmenter(solver_cfg.MIXUP)
+
+    evaluator, mixup_evaluator = build_evaluator(solver_cfg)
+    evaluator.float().cuda()
+    if mixup_evaluator is not None:
+        mixup_evaluator.float().cuda()
 
     s_time = time.time()
     parameters = list(model.parameters())
@@ -130,7 +125,7 @@ def train(cfg: CfgNode):
             input_data = inputs.float().cuda()
             labels = labels.cuda()
             if mixup_training:
-                input_data, labels = mixup(input_data, labels)
+                input_data, labels = mixup_augmenter(input_data, labels)
             grapheme_logits, vowel_logits, consonant_logits = model(input_data)
 
             if mixup_training:
@@ -179,7 +174,6 @@ def train(cfg: CfgNode):
                 eval_result = {k: eval_result[k].item() for k in eval_result}
                 total_err += eval_result['loss']
                 total_acc += eval_result['acc']
-                # print(total_err / (1 + idx), total_acc / (1 + idx))
 
         val_result = evaluator.evalulate_on_cache()
         val_total_err = val_result['loss']
@@ -200,6 +194,8 @@ def train(cfg: CfgNode):
         }
         if scheduler is not None:
             save_state['scheduler_state'] = scheduler.state_dict()
+        if use_amp:
+            save_state['amp_state'] = amp.state_dict()
         torch.save(save_state, state_fpath)
 
         print("Making a backup (step %d)" % epoch)
