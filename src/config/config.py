@@ -56,9 +56,12 @@ __C.MODEL.HEAD.DROPOUT = -1
 __C.MODEL.SOLVER = ConfigurationNode()
 __C.MODEL.SOLVER.OPTIMIZER = 'adam'
 __C.MODEL.SOLVER.BASE_LR = 0.001
+__C.MODEL.SOLVER.MAX_LR = 0.01
+__C.MODEL.SOLVER.STEP_SIZE_UP = 200
+__C.MODEL.SOLVER.MODE = 'triangular'
 __C.MODEL.SOLVER.LOSS_FN = 'xentropy'
-__C.MODEL.SOLVER.TOTAL_EPOCHS = 5
-__C.MODEL.SOLVER.OHEM_RATE = 0.5
+__C.MODEL.SOLVER.TOTAL_EPOCHS = 10
+__C.MODEL.SOLVER.OHEM_RATE = 1
 __C.MODEL.SOLVER.LABELS_WEIGHTS_PATH = 'C:/Users/nasty/data-science/kaggle/bengali/data/interim/labels_weights.p'
 
 __C.OUTPUT_PATH = 'C:/Users/nasty/data-science/kaggle/bengali-git/bengali.ai/models'
