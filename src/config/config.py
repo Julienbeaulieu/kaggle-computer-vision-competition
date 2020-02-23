@@ -11,12 +11,17 @@ __C.DATASET = ConfigurationNode()
 __C.DATASET.NAME = 'bengali_kaggle'
 __C.DATASET.DEFAULT_SIZE = (137, 236)
 __C.DATASET.RESIZE_SHAPE = (128, 128)
+__C.DATASET.WHITE_BACKGROUND = True
 __C.DATASET.CONCENTRATE_CROP = True
+__C.DATASET.PAD_TO_SQUARE = False
 __C.DATASET.GRAPHEME_SIZE = 168
 __C.DATASET.VOWEL_SIZE = 11
 __C.DATASET.CONSONANT_SIZE = 7
 __C.DATASET.TRAIN_DATA_PATH = 'C:/Users/mingy/Documents/ml_data/bengali/train_data.p'
 __C.DATASET.VAL_DATA_PATH = 'C:/Users/mingy/Documents/ml_data/bengali/val_data.p'
+
+# augmix related parameters
+__C.DATASET.DO_AUGMIX = False
 
 __C.DATASET.AUGMENTATION = ConfigurationNode()
 __C.DATASET.AUGMENTATION.BLURRING_PROB = 0.25
@@ -74,6 +79,7 @@ __C.MODEL.SOLVER.MIXUP.ALPHA = 1.0
 __C.MODEL.SOLVER.MIXUP.CUTMIX_PROB = 0.0
 
 __C.MODEL.SOLVER.LOSS = ConfigurationNode()
+
 __C.MODEL.SOLVER.LOSS.OHEM_RATE = 1.0
 __C.MODEL.SOLVER.LOSS.NAME = 'xentropy'
 __C.MODEL.SOLVER.LOSS.LABELS_WEIGHTS_PATH = 'C:/Users/mingy/Documents/ml_data/bengali/labels_weights.p'

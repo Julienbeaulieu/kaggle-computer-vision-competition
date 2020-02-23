@@ -1,6 +1,6 @@
 import torch
 from torch.optim.optimizer import Optimizer
-from torch.optim.lr_scheduler import MultiStepLR
+from torch.optim.lr_scheduler import MultiStepLR, ReduceLROnPlateau
 from yacs.config import CfgNode
 from typing import Union
 
@@ -27,7 +27,7 @@ def build_optimizer(model: torch.nn.Module, opti_cfg: CfgNode) -> Optimizer:
     return optimizer
 
 
-def build_scheduler(optimizer: Optimizer, scheduler_cfg: CfgNode) -> Union[MultiStepLR, None]:
+def build_scheduler(optimizer: Optimizer, scheduler_cfg: CfgNode):
     """
 
     :param optimizer:
@@ -44,5 +44,9 @@ def build_scheduler(optimizer: Optimizer, scheduler_cfg: CfgNode) -> Union[Multi
         milestones = scheduler_cfg.MULTI_STEPS_LR_MILESTONES
         scheduler = MultiStepLR(optimizer, milestones, gamma=gamma, last_epoch=-1)
         return scheduler
+    elif scheduler_type == 'reduce_on_plateau':
+        gamma = scheduler_cfg.LR_REDUCE_GAMMA
+        scheduler = ReduceLROnPlateau(optimizer, factor=gamma)
+        return scheduler
     else:
-        raise Exception('scheduler name invalid, choices are unchange/multi_steps')
+        raise Exception('scheduler name invalid, choices are unchange/multi_steps/reduce_on_plateau')

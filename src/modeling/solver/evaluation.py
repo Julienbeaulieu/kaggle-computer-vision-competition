@@ -38,24 +38,16 @@ class MultiHeadsEvaluation(nn.Module):
         self.loss_cache = []
 
     def forward(self, grapheme_logits: torch.Tensor, vowel_logits: torch.Tensor, consonant_logits: torch.Tensor,
-                labels: Union[tuple, torch.Tensor]) -> Dict:
+                labels: Union[tuple, torch.Tensor], js_divergence: bool = False) -> Dict:
 
         if self.do_mixup:
-            grapheme_labels, shuffled_grapheme_labels, vowel_labels, shuffled_vowel_labels, \
-            consonant_labels, shuffled_consonant_labels, lam = labels
-            labels = torch.stack([grapheme_labels, vowel_labels, consonant_labels]).T
-
-            grapheme_labels = (grapheme_labels, shuffled_grapheme_labels, lam)
-            vowel_labels = (vowel_labels, shuffled_vowel_labels, lam)
-            consonant_labels = (consonant_labels, shuffled_consonant_labels, lam)
+            labels, grapheme_labels, vowel_labels, consonant_labels = mixup_labels_helper(labels)
         else:
-            grapheme_labels = labels[:, 0]
-            vowel_labels = labels[:, 1]
-            consonant_labels = labels[:, 2]
+            grapheme_labels, vowel_labels, consonant_labels = labels[:, 0], labels[:, 1], labels[:, 2]
 
-        grapheme_loss, grapheme_acc = self.grapheme_loss_fn(grapheme_logits, grapheme_labels)
-        vowel_loss, vowel_acc = self.vowel_loss_fn(vowel_logits, vowel_labels)
-        consonant_loss, consonant_acc = self.consonant_loss_fn(consonant_logits, consonant_labels)
+        grapheme_loss, grapheme_acc = self.grapheme_loss_fn(grapheme_logits, grapheme_labels, js_divergence)
+        vowel_loss, vowel_acc = self.vowel_loss_fn(vowel_logits, vowel_labels, js_divergence)
+        consonant_loss, consonant_acc = self.consonant_loss_fn(consonant_logits, consonant_labels, js_divergence)
 
         loss = grapheme_loss + vowel_loss + consonant_loss
         acc = (grapheme_acc + vowel_acc + consonant_acc) / 3
@@ -135,6 +127,17 @@ class MultiHeadsEvaluation(nn.Module):
             'loss': loss
         }
         return result
+
+
+def mixup_labels_helper(labels: tuple):
+    grapheme_labels, shuffled_grapheme_labels, vowel_labels, shuffled_vowel_labels, \
+    consonant_labels, shuffled_consonant_labels, lam = labels
+    labels = torch.stack([grapheme_labels, vowel_labels, consonant_labels]).T
+
+    grapheme_labels = (grapheme_labels, shuffled_grapheme_labels, lam)
+    vowel_labels = (vowel_labels, shuffled_vowel_labels, lam)
+    consonant_labels = (consonant_labels, shuffled_consonant_labels, lam)
+    return labels, grapheme_labels, vowel_labels, consonant_labels
 
 
 def clf_result_helper(clf_result: Dict, preds_labels: List, pred_key: str, label_key: str):

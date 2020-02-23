@@ -1,6 +1,7 @@
 import torch
 from typing import List, Dict, Union
 from yacs.config import CfgNode
+from .jenson_shannon_divergence import jensen_shannon_divergence
 from .build import LOSS_REGISTRY
 
 
@@ -24,7 +25,13 @@ class SoftmaxCE(torch.nn.Module):
         else:
             self.loss_fn = torch.nn.CrossEntropyLoss(reduction='none')
 
-    def forward(self, logits, labels):
+    def forward(self, logits, labels, js_divergence=False):
+
+        if js_divergence:
+            logits, logits_aug1, logits_aug2 = torch.chunk(logits, 3, dim=0)
+            loss = jensen_shannon_divergence(logits, logits_aug1, logits_aug2)
+        else:
+            loss = 0
 
         preds = torch.argmax(logits.float(), dim=1)
         if self.do_mixup:
@@ -34,9 +41,9 @@ class SoftmaxCE(torch.nn.Module):
             losses = self.loss_fn(logits, labels)
             corrects = (labels == preds)
         if self.ohem_rate < 1:
-            loss = self.compute_ohem_loss(losses)
+            loss += self.compute_ohem_loss(losses)
         else:
-            loss = losses.mean()
+            loss += losses.mean()
 
         acc = torch.sum(corrects) / (len(corrects) + 0.0)
 

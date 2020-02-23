@@ -87,6 +87,7 @@ def train(cfg: CfgNode):
     opti_cfg = solver_cfg.OPTIMIZER
     optimizer = build_optimizer(model, opti_cfg)
     scheduler_cfg = solver_cfg.SCHEDULER
+    scheduler_type = scheduler_cfg.NAME
     scheduler = build_scheduler(optimizer, scheduler_cfg)
     use_amp = solver_cfg.AMP
     if use_amp:
@@ -184,7 +185,10 @@ def train(cfg: CfgNode):
         evaluator.clear_cache()
 
         if scheduler is not None:
-            scheduler.step()
+            if scheduler_type == 'reduce_on_plateau':
+                scheduler.step(val_total_err)
+            else:
+                scheduler.step()
 
         print("Saving the model (epoch %d)" % epoch)
         save_state = {

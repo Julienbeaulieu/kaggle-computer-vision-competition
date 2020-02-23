@@ -2,6 +2,7 @@ import torch
 from typing import List
 from yacs.config import CfgNode
 from torch.nn import functional as F
+from .jenson_shannon_divergence import jensen_shannon_divergence
 from .build import LOSS_REGISTRY
 
 
@@ -24,7 +25,14 @@ class WeightedFocalLoss(torch.nn.Module):
         focal_loss_cfg = loss_cfg.FOCAL_LOSS
         self.gamma = focal_loss_cfg.GAMMA
 
-    def forward(self, logits, labels):
+    def forward(self, logits, labels, js_divergence=False):
+
+        if js_divergence:
+            logits, logits_aug1, logits_aug2 = torch.chunk(logits, 3, dim=0)
+            loss = jensen_shannon_divergence(logits, logits_aug1, logits_aug2)
+        else:
+            loss = 0
+
         targets = self.dummy_eyes[labels]
         alpha = self.class_weights[labels]
 
