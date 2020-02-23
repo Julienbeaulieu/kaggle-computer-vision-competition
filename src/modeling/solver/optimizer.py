@@ -1,6 +1,6 @@
 import torch
 from torch.optim.optimizer import Optimizer
-from torch.optim.lr_scheduler import CyclicLR, MultiStepLR
+from torch.optim.lr_scheduler import OneCycleLR, MultiStepLR
 from yacs.config import CfgNode
 
 def build_optimizer(model: torch.nn.Module, solver_cfg: CfgNode) -> Optimizer:
@@ -19,14 +19,14 @@ def build_optimizer(model: torch.nn.Module, solver_cfg: CfgNode) -> Optimizer:
     lr = solver_cfg.BASE_LR
     return optimzers[opti_type](parameters, lr=lr)
 
-
-def build_scheduler(optimizer: torch.optim, solver_cfg: CfgNode):
+def build_scheduler(optimizer: torch.optim, solver_cfg: CfgNode, steps_per_epoch):
     """
-    CyclicLR: https://arxiv.org/abs/1506.01186
+    OneCycleLR:    https://arxiv.org/abs/1708.07120
     """
-    base_lr = solver_cfg.BASE_LR
-    max_lr = solver_cfg.MAX_LR
-    step_size_up = solver_cfg.STEP_SIZE_UP
-    mode = solver_cfg.MODE 
-    scheduler = CyclicLR(optimizer, base_lr, max_lr, step_size_up=step_size_up, mode=mode, cycle_momentum=False)
+    scheduler = OneCycleLR(optimizer, 
+                           max_lr=solver_cfg.MAX_LR, 
+                           steps_per_epoch=steps_per_epoch,
+                           epochs=solver_cfg.TOTAL_EPOCHS,
+                           anneal_strategy='cos', 
+                           cycle_momentum=True)
     return scheduler

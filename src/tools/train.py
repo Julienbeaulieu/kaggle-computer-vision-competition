@@ -2,100 +2,11 @@ import os
 import json
 import pickle
 import torch
+import numpy as np
 from src.modeling.meta_arch.build import build_model
 from src.data.bengali_data import build_data_loader
 from src.modeling.solver.optimizer import build_optimizer, build_scheduler
 from src.modeling.solver.evaluation import build_evaluator
-
-from functools import partial
-import math 
-from typing import List, Dict, Union, Optional, Iterable
-
-# def is_listy(x): return isinstance(x, (list,tuple))
-
-# def tensor(x, *rest):
-#     "Like `torch.as_tensor`, but handle lists too, and can pass multiple vector elements directly."
-#     if len(rest): x = (x,)+rest
-#     # XXX: Pytorch bug in dataloader using num_workers>0; TODO: create repro and report
-#     if is_listy(x) and len(x)==0: return tensor(0)
-#     res = torch.tensor(x) if is_listy(x) else torch.as_tensor(x)
-#     if res.dtype is torch.int32:
-#         #warn('Tensor is int32: upgrading to int64; for better performance use int64 input')
-#         return res.long()
-#     return res
-
-# class Recorder():
-#     def begin_fit(self): self.lrs,self.losses = [],[]
-
-#     def after_batch(self):
-#         if not self.in_train: return
-#         self.lrs.append(self.opt.param_groups[-1]['lr'])
-#         self.losses.append(self.loss.detach().cpu())        
-
-#     def plot_lr  (self): plt.plot(self.lrs)
-#     def plot_loss(self): plt.plot(self.losses)
-
-# class ParamScheduler():
-#     def __init__(self, param_name, sched_func, opt, n_epochs, epochs):
-#         self.param_name = param_name
-#         self.sched_func = sched_func
-#         self.n_epochs = n_epochs
-#         self.epochs = epochs
-#         self.opt = opt
-    
-#     def set_param(self):
-#         for pg in self.opt.param_groups:
-#             pg[self.param_name] = self.sched_func(self.n_epochs/self.epochs)
-
-#     def begin_batch(self):
-#         self.set_param()
-
-# def annealer(f):
-#     def _inner(start, end): return partial(f, start, end)
-#     return _inner
-
-# @annealer
-# def sched_lin(start, end, pos): return start + pos*(end-start)
-
-# @annealer
-# def sched_cos(start, end, pos): return start + (1 + math.cos(math.pi*(1-pos))) * (end-start) / 2
-# @annealer
-# def sched_no(start, end, pos):  return start
-# @annealer
-# def sched_exp(start, end, pos): return start * (end/start) ** pos
-
-# def cos_1cycle_anneal(start, high, end):
-#     return [sched_cos(start, high), sched_cos(high, end)]
-
-
-# def listify(p=None, q=None):
-#     "Make `p` listy and the same length as `q`."
-#     if p is None: p=[]
-#     elif isinstance(p, str):          p = [p]
-#     elif not isinstance(p, Iterable): p = [p]
-#     #Rank 0 tensors in PyTorch are Iterable but don't have a length.
-#     else:
-#         try: a = len(p)
-#         except: p = [p]
-#     n = q if type(q)==int else len(p) if q is None else len(q)
-#     if len(p)==1: p = p * n
-#     assert len(p)==n, f'List len mismatch ({len(p)} vs {n})'
-#     return list(p)
-
-# def combine_scheds(pcts, scheds):
-#     assert sum(pcts) == 1.
-#     pcts = tensor([0] + listify(pcts))
-#     assert torch.all(pcts >= 0)
-#     pcts = torch.cumsum(pcts, 0)
-#     def _inner(pos):
-#         idx = (pos >= pcts).nonzero().max()
-#         actual_pos = (pos-pcts[idx]) / (pcts[idx+1]-pcts[idx])
-#         return scheds[idx](actual_pos)
-#     return _inner
-
-# #sched = combine_scheds([0.3, 0.7], [sched_cos(0.003, 0.006), sched_cos(0.006, 0.002)]) 
-# sched = sched_lin(0.003, 0.006)
-
 
 def train(cfg, debug=False):
     # FILES, PATHS
@@ -137,14 +48,12 @@ def train(cfg, debug=False):
     # SOLVER EVALUATOR
     solver_cfg = cfg.MODEL.SOLVER
     optimizer = build_optimizer(model, solver_cfg)
-    scheduler = build_scheduler(optimizer, solver_cfg)
-    # scheduler = MultiStepLR(optimizer, milestones=[1,2,3,9], gamma=0.1, last_epoch=-1)
+    scheduler = build_scheduler(optimizer, solver_cfg, steps_per_epoch=np.int(len(train_data)/cfg.DATASET.BATCH_SIZE))
     evaluator = build_evaluator(solver_cfg)
     evaluator.float().cuda()
     total_epochs = solver_cfg.TOTAL_EPOCHS
 
     for epoch in range(current_epoch, total_epochs):
-        scheduler_lrs,scheduler_losses = [],[]
         model.train()
         print('Start epoch', epoch)
         train_itr = iter(train_loader)
@@ -153,9 +62,6 @@ def train(cfg, debug=False):
         inputs, labels = next(train_itr)
 
         for idx, (inputs, labels) in enumerate(train_itr):
-            
-            # scheduler = ParamScheduler('lr', sched, optimizer, solver_cfg.TOTAL_EPOCHS, 4000.0)
-            # scheduler.set_param()
 
             # compute
             input_data = inputs.float().cuda()
@@ -171,15 +77,12 @@ def train(cfg, debug=False):
             eval_result['loss'].backward()
             optimizer.step()
 
-            eval_result = {k: eval_result[k].item() for k in eval_result}
-            
-            # lr sched
-            scheduler_lrs.append(optimizer.param_groups[-1]['lr'])
-            scheduler_losses.append(eval_result['loss'])
-            
-
+            eval_result = {k: eval_result[k].item() for k in eval_result}        
+            scheduler.step()
+        
             if idx % 100 == 0:
                 print(idx, eval_result['loss'], eval_result['acc'])
+                print('Learning rate now set to: ' + str(optimizer.param_groups[-1]['lr']))
                 
         train_result = evaluator.evalulate_on_cache()
         train_total_err = train_result['loss']
@@ -211,9 +114,6 @@ def train(cfg, debug=False):
 
         print("Epoch {0} Eval, Loss {1}, Acc {2}, Kaggle score {3}".format(epoch, val_total_err, val_total_acc, val_kaggle_score))
         evaluator.clear_cache()
-
-        scheduler.step()
-        print('Learning rate now set to: ' + str(optimizer.param_groups[-1]['lr']))
 
         print("Saving the model (epoch %d)" % epoch)
         torch.save({
