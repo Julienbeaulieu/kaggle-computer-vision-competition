@@ -2,9 +2,10 @@ import os
 import json
 import pickle
 import torch
+import numpy as np
 from src.modeling.meta_arch.build import build_model
 from src.data.bengali_data import build_data_loader
-from src.modeling.solver.optimizer import build_optimizer
+from src.modeling.solver.optimizer import build_optimizer, build_scheduler
 from src.modeling.solver.evaluation import build_evaluator
 
 def train(cfg, debug=False):
@@ -47,6 +48,7 @@ def train(cfg, debug=False):
     # SOLVER EVALUATOR
     solver_cfg = cfg.MODEL.SOLVER
     optimizer = build_optimizer(model, solver_cfg)
+    scheduler = build_scheduler(optimizer, solver_cfg, steps_per_epoch=np.int(len(train_data)/cfg.DATASET.BATCH_SIZE))
     evaluator = build_evaluator(solver_cfg)
     evaluator.float().cuda()
     total_epochs = solver_cfg.TOTAL_EPOCHS
@@ -65,24 +67,29 @@ def train(cfg, debug=False):
             input_data = inputs.float().cuda()
             labels = labels.cuda()
 
+            # Calculate preds
             grapheme_logits, vowel_logits, consonant_logits = model(input_data)
 
+            # Calling MultiHeadsEval forward function
             eval_result = evaluator(grapheme_logits, vowel_logits, consonant_logits, labels)
             optimizer.zero_grad()
 
             eval_result['loss'].backward()
             optimizer.step()
 
-            eval_result = {k: eval_result[k].item() for k in eval_result}
-            
+            eval_result = {k: eval_result[k].item() for k in eval_result}        
+            scheduler.step()
+        
             if idx % 100 == 0:
                 print(idx, eval_result['loss'], eval_result['acc'])
-
+                print('Learning rate now set to: ' + str(optimizer.param_groups[-1]['lr']))
+                
         train_result = evaluator.evalulate_on_cache()
         train_total_err = train_result['loss']
         train_total_acc = train_result['acc']
+        train_kaggle_score = train_result['kaggle_score']
 
-        print("Epoch {0} Training, Loss {1}, Acc {2}".format(epoch, train_total_err, train_total_acc))
+        print("Epoch {0} Training, Loss {1}, Acc {2}, kaggle Score {3}".format(epoch, train_total_err, train_total_acc, train_kaggle_score))
         evaluator.clear_cache()
 
         # compute validation error
@@ -105,9 +112,8 @@ def train(cfg, debug=False):
         val_total_acc = val_result['acc']
         val_kaggle_score = val_result['kaggle_score']
 
-        print("Epoch {0} Eval, Loss {1}, Acc {2}".format(epoch, val_total_err, val_total_acc))
+        print("Epoch {0} Eval, Loss {1}, Acc {2}, Kaggle score {3}".format(epoch, val_total_err, val_total_acc, val_kaggle_score))
         evaluator.clear_cache()
-
 
         print("Saving the model (epoch %d)" % epoch)
         torch.save({
@@ -129,8 +135,10 @@ def train(cfg, debug=False):
                 'epoch': epoch,
                 'train_err': train_total_err,
                 'train_acc': train_total_acc,
+                'train_kaggle_score': train_kaggle_score,
                 'val_err': val_total_err,
                 'val_acc': val_total_acc,
+                'val_kaggle_score': val_kaggle_score,
                 'train_result': train_result,
                 'val_result': val_result
             }
