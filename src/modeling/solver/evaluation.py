@@ -96,7 +96,6 @@ class MultiHeadsEval(nn.Module):
         self.loss_cache.append(loss.detach().item())
         self.acc_cache.append(acc.detach().item())
 
-
         return eval_result
 
     def clear_cache(self):
