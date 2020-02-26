@@ -4,7 +4,7 @@ import numpy as np
 from typing import List, Dict, Union
 from yacs.config import CfgNode
 from torch import nn
-from sklearn.metrics.classification import classification_report
+from sklearn.metrics import classification_report
 from .loss import build_loss
 
 # class EvalBlock(nn.Module):
