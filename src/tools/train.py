@@ -76,11 +76,13 @@ def train(cfg: CfgNode):
                 torch.nn.init.constant_(m.bias, -3.0)
 
     current_epoch = 0
-
+    multi_gpu_training = cfg.MULTI_GPU_TRAINING
     if cfg.RESUME_PATH != "":
         checkpoint = torch.load(cfg.RESUME_PATH, map_location='cpu')
         current_epoch = checkpoint['epoch']
         model.load_state_dict(checkpoint["model_state"])
+    if multi_gpu_training:
+        model = torch.nn.DataParallel(model)
     _ = model.cuda()
 
     # optimizer, scheduler, amp
@@ -116,6 +118,8 @@ def train(cfg: CfgNode):
     parameters = list(model.parameters())
     for epoch in range(current_epoch, total_epochs):
         model.train()
+        if multi_gpu_training:
+            model.freeze_bn()
         print('Start epoch', epoch)
         train_itr = iter(train_loader)
         total_err = 0

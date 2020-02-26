@@ -12,12 +12,17 @@ class MixupAugmenter(torch.nn.Module):
 
     def __init__(self, mixup_cfg: CfgNode):
         super(MixupAugmenter, self).__init__()
-        self.alpha = mixup_cfg.ALPHA
+        self.cutmix_alpha = mixup_cfg.CUTMIX_ALPHA
+        self.mixup_alpha = mixup_cfg.MIXUP_ALPHA
         self.cutmix_prob = mixup_cfg.CUTMIX_PROB
 
     def forward(self, data, labels):
         do_cutmix = (random.random() <= self.cutmix_prob)
-        data, targets = mixup(data, labels, self.alpha, do_cutmix)
+        if do_cutmix:
+            alpha = self.cutmix_alpha
+        else:
+            alpha = self.mixup_alpha
+        data, targets = mixup(data, labels, alpha, do_cutmix)
         return data, targets
 
 

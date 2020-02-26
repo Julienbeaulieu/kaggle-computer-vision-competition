@@ -13,5 +13,9 @@ def build_model(model_cfg: CfgNode) -> nn.Module:
     """
     meta_arch = model_cfg.META_ARCHITECTURE
     model = META_ARCH_REGISTRY.get(meta_arch)(model_cfg)
-    model = convert_model(model)
+
+    # This is VERY SLOW
+    if model_cfg.NORMALIZATION_FN == 'SYNC_BN':
+        model = convert_model(model)
+
     return model

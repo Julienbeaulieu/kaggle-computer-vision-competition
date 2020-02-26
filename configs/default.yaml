@@ -70,7 +70,8 @@ MODEL:
       MULTI_STEPS_LR_MILESTONES: []
     MIXUP_AUGMENT: false
     MIXUP:
-      ALPHA: 1.0
+      MIXUP_ALPHA: 0.4
+      CUTMIX_ALPHA: 1.0
       CUTMIX_PROB: 0.0
     AMP: false
     LOSS:
@@ -79,3 +80,4 @@ MODEL:
       OHEM_RATE: 1.0
 OUTPUT_PATH: ''
 RESUME_PATH: ''
+MULTI_GPU_TRAINING: false

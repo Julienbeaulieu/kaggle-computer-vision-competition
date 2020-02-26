@@ -4,7 +4,7 @@ from matplotlib import pyplot as plt
 import random
 
 
-def vis_square(data):
+def vis_square(data, base_size=10):
     """
     Gallery visualizer.
     Take an array of shape (n, height, width) or (n, height, width, 3) and visualize each (height, width) thing in a grid of size approx. sqrt(n) by sqrt(n)
@@ -30,7 +30,7 @@ def vis_square(data):
 
     data = data.reshape((n * data.shape[1], n * data.shape[3]) + data.shape[4:])
 
-    fig_size = int(10 / 8 * n)
+    fig_size = int(base_size / 8 * n)
 
     plt.figure(figsize=(fig_size, fig_size))
 
