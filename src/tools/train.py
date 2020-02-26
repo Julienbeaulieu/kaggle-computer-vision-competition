@@ -5,8 +5,10 @@ import torch
 import numpy as np
 from src.modeling.meta_arch.build import build_model
 from src.data.bengali_data import build_data_loader
-from src.modeling.solver.optimizer import build_optimizer, build_scheduler
-from src.modeling.solver.evaluation import build_evaluator
+from src.modeling.solver import build_optimizer, build_scheduler, build_evaluator, MixupAugmenter
+
+from yacs.config import CfgNode
+from src.config import get_cfg_defaults
 
 def train(cfg, debug=False):
     # FILES, PATHS
@@ -38,20 +40,34 @@ def train(cfg, debug=False):
 
     # MODEL
     model = build_model(cfg.MODEL)
+    solver_cfg = cfg.MODEL.SOLVER
+    loss_fn = solver_cfg.LOSS.NAME
+
     current_epoch = 0
+    total_epochs = solver_cfg.TOTAL_EPOCHS
+
+
+    # resume
     if cfg.RESUME_PATH != "":
         checkpoint = torch.load(cfg.RESUME_PATH, map_location='cpu')
         current_epoch = checkpoint['epoch']
         model.load_state_dict(checkpoint["model_state"])
     _ = model.cuda()
 
-    # SOLVER EVALUATOR
-    solver_cfg = cfg.MODEL.SOLVER
-    optimizer = build_optimizer(model, solver_cfg)
-    scheduler = build_scheduler(optimizer, solver_cfg, steps_per_epoch=np.int(len(train_data)/cfg.DATASET.BATCH_SIZE))
-    evaluator = build_evaluator(solver_cfg)
+    # optimizer, scheduler
+    opti_cfg = solver_cfg.OPTIMIZER
+    optimizer = build_optimizer(model, opti_cfg)
+    sched_cfg = solver_cfg.SCHEDULER
+    scheduler = build_scheduler(optimizer, sched_cfg, steps_per_epoch=np.int(len(train_data)/cfg.DATASET.BATCH_SIZE))
+
+    # evaluator
+    mixup_training = solver_cfg.MIXUP_AUGMENT
+    if mixup_training:
+        mixup_augmenter = MixupAugmenter(solver_cfg.MIXUP)
+    evaluator, mixup_evaluator = build_evaluator(solver_cfg)
     evaluator.float().cuda()
-    total_epochs = solver_cfg.TOTAL_EPOCHS
+    if mixup_evaluator is not None:
+        mixup_evaluator.float().cuda()
 
     for epoch in range(current_epoch, total_epochs):
         model.train()
@@ -68,13 +84,19 @@ def train(cfg, debug=False):
             labels = labels.cuda()
 
             # Calculate preds
+            if mixup_training:
+                input_data, labels = mixup_augmenter(input_data, labels)
             grapheme_logits, vowel_logits, consonant_logits = model(input_data)
 
             # Calling MultiHeadsEval forward function
-            eval_result = evaluator(grapheme_logits, vowel_logits, consonant_logits, labels)
+            if mixup_training:
+                eval_result = mixup_evaluator(grapheme_logits, vowel_logits, consonant_logits, labels)
+            else:
+                eval_result = evaluator(grapheme_logits, vowel_logits, consonant_logits, labels)
             optimizer.zero_grad()
 
-            eval_result['loss'].backward()
+            loss = eval_result['loss']
+            loss.backward()
             optimizer.step()
 
             eval_result = {k: eval_result[k].item() for k in eval_result}        
@@ -83,8 +105,13 @@ def train(cfg, debug=False):
             if idx % 100 == 0:
                 print(idx, eval_result['loss'], eval_result['acc'])
                 print('Learning rate now set to: ' + str(optimizer.param_groups[-1]['lr']))
-                
-        train_result = evaluator.evalulate_on_cache()
+
+        if mixup_training:
+            train_result = mixup_evaluator.evaluate_on_cache()
+            mixup_evaluator.clear_cache()
+        else:
+            train_result = evaluator.evaluate_on_cache()
+
         train_total_err = train_result['loss']
         train_total_acc = train_result['acc']
         train_kaggle_score = train_result['kaggle_score']
@@ -107,7 +134,7 @@ def train(cfg, debug=False):
                 total_acc += eval_result['acc']
                 # print(total_err / (1 + idx), total_acc / (1 + idx))
 
-        val_result = evaluator.evalulate_on_cache()
+        val_result = evaluator.evaluate_on_cache()
         val_total_err = val_result['loss']
         val_total_acc = val_result['acc']
         val_kaggle_score = val_result['kaggle_score']
