@@ -7,6 +7,7 @@ __C = ConfigurationNode()
 # importing default as a global singleton
 cfg = __C
 
+# bengaliai image sizes and class numbers
 __C.DATASET = ConfigurationNode()
 __C.DATASET.NAME = 'bengali_kaggle'
 __C.DATASET.DEFAULT_SIZE = (137, 236)
@@ -15,12 +16,14 @@ __C.DATASET.CONCENTRATE_CROP = True
 __C.DATASET.GRAPHEME_SIZE = 168
 __C.DATASET.VOWEL_SIZE = 11
 __C.DATASET.CONSONANT_SIZE = 7
+
+# training and validation set paths
 __C.DATASET.TRAIN_DATA_PATH = 'C:/Users/nasty/data-science/kaggle/bengali/data/interim/train_data.p'
 __C.DATASET.VAL_DATA_PATH = 'C:/Users/nasty/data-science/kaggle/bengali/data/interim/val_data.p'
 __C.DATASET.TRAIN_DATA_SAMPLE = 'C:/Users/nasty/data-science/kaggle/bengali/data/interim/train_data_sample.p'
 __C.DATASET.VALID_DATA_SAMPLE = 'C:/Users/nasty/data-science/kaggle/bengali/data/interim/train_data_sample.p'
 
-
+# data augmentation parameters with albumentations library
 __C.DATASET.AUGMENTATION = ConfigurationNode()
 __C.DATASET.AUGMENTATION.BLURRING_PROB = 0.25
 __C.DATASET.AUGMENTATION.GAUSS_NOISE_PROB = 0.25
@@ -28,7 +31,9 @@ __C.DATASET.AUGMENTATION.BRIGHTNESS_CONTRAST_PROB = 1
 __C.DATASET.AUGMENTATION.GRID_DISTORTION_PROB = 1
 __C.DATASET.AUGMENTATION.ROTATION_PROB = 1
 __C.DATASET.AUGMENTATION.ROTATION_DEGREE = 20
-__C.DATASET.AUGMENTATION.COARSE_DROPOUT_PROB = 0.4
+__C.DATASET.AUGMENTATION.CUTOUT_PROB = 0.3
+__C.DATASET.AUGMENTATION.HEIGHT = 128
+__C.DATASET.AUGMENTATION.WIDTH = 128
 
 __C.DATASET.BATCH_SIZE = 32
 __C.DATASET.CPU_NUM = 1
@@ -54,15 +59,27 @@ __C.MODEL.HEAD.BN = True
 __C.MODEL.HEAD.DROPOUT = -1
 
 __C.MODEL.SOLVER = ConfigurationNode()
-__C.MODEL.SOLVER.OPTIMIZER = 'adam'
-__C.MODEL.SOLVER.BASE_LR = 0.001
-__C.MODEL.SOLVER.MAX_LR = 0.01
-__C.MODEL.SOLVER.STEP_SIZE_UP = 20000
-__C.MODEL.SOLVER.MODE = 'triangular'
-__C.MODEL.SOLVER.LOSS_FN = 'xentropy'
-__C.MODEL.SOLVER.TOTAL_EPOCHS = 3
-__C.MODEL.SOLVER.OHEM_RATE = 1
 __C.MODEL.SOLVER.LABELS_WEIGHTS_PATH = 'C:/Users/nasty/data-science/kaggle/bengali/data/interim/labels_weights.p'
+
+__C.MODEL.SOLVER.OPTIMIZER = ConfigurationNode()
+__C.MODEL.SOLVER.OPTIMIZER.NAME = 'adam'
+__C.MODEL.SOLVER.OPTIMIZER.BASE_LR = 0.001
+
+__C.MODEL.SOLVER.SCHEDULER = ConfigurationNode()
+__C.MODEL.SOLVER.SCHEDULER.NAME = 'OneCycleLR'
+__C.MODEL.SOLVER.SCHEDULER.TOTAL_EPOCHS = 40
+__C.MODEL.SOLVER.SCHEDULER.MAX_LR = 0.01
+
+#__C.MODEL.SOLVER.LABELS_WEIGHTS_PATH = 'C:/Users/nasty/data-science/kaggle/bengali/data/interim/labels_weights.p'
+__C.MODEL.SOLVER.MIXUP_AUGMENT = True
+__C.MODEL.SOLVER.MIXUP = ConfigurationNode()
+__C.MODEL.SOLVER.MIXUP.CUTMIX_ALPHA = 1
+__C.MODEL.SOLVER.MIXUP.MIXUP_ALPHA = 0.4
+__C.MODEL.SOLVER.MIXUP.CUTMIX_PROB = 0.4
+
+__C.MODEL.SOLVER.LOSS = ConfigurationNode()
+__C.MODEL.SOLVER.LOSS.NAME = 'xentropy'
+__C.MODEL.SOLVER.LOSS.OHEM_RATE = 1.0
 
 __C.OUTPUT_PATH = 'C:/Users/nasty/data-science/kaggle/bengali-git/bengali.ai/models'
 __C.RESUME_PATH = ''

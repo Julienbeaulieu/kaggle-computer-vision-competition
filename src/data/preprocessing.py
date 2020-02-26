@@ -2,23 +2,55 @@ import numpy as np
 from numpy import ndarray
 from yacs.config import CfgNode
 from albumentations import OneOf, Compose, MotionBlur, MedianBlur, Blur, RandomBrightnessContrast, GaussNoise, \
-    GridDistortion, Rotate, CoarseDropout
-from typing import Union
-
+    GridDistortion, Rotate, CoarseDropout, Cutout
+from typing import Union, List, Tuple
+import cv2
 from cv2 import resize
 
-def content_crop(img: ndarray) -> ndarray:
-    """
-    cut out the section of image where there is the most of character
-    :param img: raw black white image, scale [0 to 255]
-    :return: cut out img
-    """
-    y_list, x_list = np.where(img < 235)
-    x_min, x_max = np.min(x_list), np.max(x_list)
-    y_min, y_max = np.min(y_list), np.max(y_list)
-    img = img[y_min:y_max, x_min:x_max]
-    return img
 
+def content_crop(img: ndarray, pad_to_square: bool, white_background: bool):
+    """
+    https://www.kaggle.com/iafoss/image-preprocessing-128x128
+
+    :param img: grapheme image matrix
+    :param pad_to_square:  whether pad to square (preserving aspect ratio)
+    :param white_background: whether the image
+    :return: cropped image matrix
+    """
+    # remove the surrounding 5 pixels
+    img = img[5:-5, 5:-5]
+    if white_background:
+        y_list, x_list = np.where(img < 235)
+    else:
+        y_list, x_list = np.where(img > 80)
+
+    # get xy min max
+    xmin, xmax = np.min(x_list), np.max(x_list)
+    ymin, ymax = np.min(y_list), np.max(y_list)
+
+    xmin = xmin - 13 if (xmin > 13) else 0
+    ymin = ymin - 10 if (ymin > 10) else 0
+    xmax = xmax + 13 if (xmax < 223) else 236
+    ymax = ymax + 10 if (ymax < 127) else 137
+    img = img[ymin:ymax, xmin:xmax]
+
+    # remove lo intensity pixels as noise
+    if white_background:
+        img[img > 235] = 255
+    else:
+        img[img < 28] = 0
+
+    if pad_to_square:
+        lx, ly = xmax - xmin, ymax - ymin
+        l = max(lx, ly) + 16
+        # make sure that the aspect ratio is kept in rescaling
+        if white_background:
+            constant_pad = 255
+        else:
+            constant_pad = 0
+        img = np.pad(img, [((l - ly) // 2,), ((l - lx) // 2,)], mode='constant', constant_values=constant_pad)
+
+    return img
 
 class Preprocessor(object):
     """
@@ -90,11 +122,11 @@ class Preprocessor(object):
             return None
     
     @staticmethod
-    def generate_cutout_augmentation(aug_cfg):
+    def generate_cutout_augmentation(aug_cfg: CfgNode):
         
         cutout_aug_list = []
-        if aug_cfg.COARSE_DROPOUT_PROB > 0:
-            cutout_aug_list.append(CoarseDropout(max_holes=5, max_height=7, max_width=7, p=aug_cfg.COARSE_DROPOUT_PROB))
+        if aug_cfg.CUTOUT_PROB > 0:
+            cutout_aug_list.append(Cutout(num_holes=1, max_h_size=aug_cfg.HEIGHT, max_w_size=aug_cfg.WIDTH, p=aug_cfg.CUTOUT_PROB))
                                   
         if len(cutout_aug_list) > 0:
             cutout_aug = Compose(cutout_aug_list, p=1)
@@ -116,7 +148,7 @@ class Preprocessor(object):
 
         # crop
         if self.crop:
-            x = content_crop(x)
+            x = content_crop(x, pad_to_square=True, white_background=True)
 
         # color augment
         if is_training and self.color_aug is not None:
