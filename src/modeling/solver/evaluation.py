@@ -9,32 +9,12 @@ from sklearn.metrics import classification_report
 from .loss import WeightedFocalLoss, SoftMaxCE
 
 
-class EvalBlock(nn.Module):
-
-    def __init__(self, loss_cfg: CfgNode, weights: Union[None, List[float]], num_classes: int):
-        super(EvalBlock, self).__init__()
-
-        # very messy code, to be cleaned later
-        if loss_cfg.NAME == 'xentropy':
-            self.loss_fn = SoftMaxCE(weights, loss_cfg.OHEM_RATE)
-        else:
-            fl_params = loss_cfg.FOCAL_LOSS
-            self.loss_fn = WeightedFocalLoss(num_classes, weights, fl_params.GAMMA)
-
-    def forward(self, logits, labels):
-        loss = self.loss_fn(logits, labels)
-        preds = torch.argmax(logits.float(), dim=1)
-        corrects = (labels == preds)
-        acc = torch.sum(corrects) / (len(corrects) + 0.0)
-        return loss, acc
-
-
-class MultiHeadsEval(nn.Module):
-
+class MultiHeadsEvaluation(nn.Module):
     def __init__(self, solver_cfg: CfgNode):
-        super(MultiHeadsEval, self).__init__()
+        super(MultiHeadsEvaluation, self).__init__()
         loss_cfg = solver_cfg.LOSS
         weights_path = loss_cfg.LABELS_WEIGHTS_PATH
+        do_mixup = solver_cfg.MIXUP_AUGMENT
         if weights_path != '':
             weights_data = pickle.load(open(weights_path, 'rb'))
             grapheme_weights = weights_data['grapheme']
@@ -45,9 +25,11 @@ class MultiHeadsEval(nn.Module):
             vowel_weights = None
             consonant_weights = None
 
-        self.grapheme_eval = EvalBlock(loss_cfg, grapheme_weights, 168)
-        self.vowel_eval = EvalBlock(loss_cfg, vowel_weights, 11)
-        self.consonant_eval = EvalBlock(loss_cfg, consonant_weights, 7)
+        self.grapheme_loss_fn = build_loss(loss_cfg, do_mixup=do_mixup, weights=grapheme_weights, num_classes=168)
+        self.vowel_loss_fn = build_loss(loss_cfg, do_mixup=do_mixup, weights=vowel_weights, num_classes=11)
+        self.consonant_loss_fn = build_loss(loss_cfg, do_mixup=do_mixup, weights=consonant_weights, num_classes=7)
+        self.do_mixup = do_mixup
+
         self.grapheme_logits_cache = []
         self.vowel_logits_cache = []
         self.consonant_logits_cache = []
@@ -56,13 +38,20 @@ class MultiHeadsEval(nn.Module):
         self.loss_cache = []
 
     def forward(self, grapheme_logits: torch.Tensor, vowel_logits: torch.Tensor, consonant_logits: torch.Tensor,
-                labels: torch.Tensor) -> Dict:
-        # compute loss
-        grapheme_loss, grapheme_acc = self.grapheme_eval(grapheme_logits, labels[:, 0])
-        vowel_loss, vowel_acc = self.vowel_eval(vowel_logits, labels[:, 1])
-        consonant_loss, consonant_acc = self.consonant_eval(consonant_logits, labels[:, 2])
+                labels: Union[tuple, torch.Tensor], js_divergence: bool = False) -> Dict:
+
+        if self.do_mixup:
+            labels, grapheme_labels, vowel_labels, consonant_labels = mixup_labels_helper(labels)
+        else:
+            grapheme_labels, vowel_labels, consonant_labels = labels[:, 0], labels[:, 1], labels[:, 2]
+
+        grapheme_loss, grapheme_acc = self.grapheme_loss_fn(grapheme_logits, grapheme_labels, js_divergence)
+        vowel_loss, vowel_acc = self.vowel_loss_fn(vowel_logits, vowel_labels, js_divergence)
+        consonant_loss, consonant_acc = self.consonant_loss_fn(consonant_logits, consonant_labels, js_divergence)
+
         loss = grapheme_loss + vowel_loss + consonant_loss
         acc = (grapheme_acc + vowel_acc + consonant_acc) / 3
+
         eval_result = {
             'grapheme_loss': grapheme_loss,
             'grapheme_acc': grapheme_acc,
@@ -140,8 +129,15 @@ class MultiHeadsEval(nn.Module):
         return result
 
 
-def build_evaluator(solver_cfg: CfgNode) -> MultiHeadsEval:
-    return MultiHeadsEval(solver_cfg)
+def mixup_labels_helper(labels: tuple):
+    grapheme_labels, shuffled_grapheme_labels, vowel_labels, shuffled_vowel_labels, \
+    consonant_labels, shuffled_consonant_labels, lam = labels
+    labels = torch.stack([grapheme_labels, vowel_labels, consonant_labels]).T
+
+    grapheme_labels = (grapheme_labels, shuffled_grapheme_labels, lam)
+    vowel_labels = (vowel_labels, shuffled_vowel_labels, lam)
+    consonant_labels = (consonant_labels, shuffled_consonant_labels, lam)
+    return labels, grapheme_labels, vowel_labels, consonant_labels
 
 
 def clf_result_helper(clf_result: Dict, preds_labels: List, pred_key: str, label_key: str):
@@ -172,3 +168,12 @@ def clf_result_helper(clf_result: Dict, preds_labels: List, pred_key: str, label
                 clf_result[k]['error_cls_rate'] = 0
     clf_result = [clf_result[k] for k in clf_result if k not in ['accuracy', 'macro avg', 'weighted avg']]
     return clf_result
+
+
+def build_evaluator(solver_cfg: CfgNode):
+    if solver_cfg.MIXUP_AUGMENT:
+        nomixup_cfg = solver_cfg.clone()
+        nomixup_cfg.MIXUP_AUGMENT = False
+        return MultiHeadsEvaluation(nomixup_cfg), MultiHeadsEvaluation(solver_cfg)
+    else:
+        return MultiHeadsEvaluation(solver_cfg), None

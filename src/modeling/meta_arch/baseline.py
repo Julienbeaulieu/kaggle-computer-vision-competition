@@ -51,3 +51,13 @@ class BaselineModel(nn.Module):
         # split output into the 3 classes
         grapheme_logits, vowel_logits, consonant_logits = torch.split(x, self.heads_dims, dim=1)
         return grapheme_logits, vowel_logits, consonant_logits
+
+    def freeze_bn(self):
+        """
+        https://github.com/kuangliu/pytorch-retinanet/blob/master/retinanet.py
+        Freeze BatchNorm layers
+        :return:
+        """
+        for layer in self.modules():
+            if isinstance(layer, nn.BatchNorm2d):
+                layer.eval()

@@ -37,8 +37,9 @@ class BengaliDataBatchCollator(object):
     Custom collator
     """
 
-    def __init__(self):
-        pass
+    def __init__(self, is_training, do_augmix):
+        self.is_training = is_training
+        self.do_augmix = do_augmix
 
     def __call__(self, batch: List) -> (torch.Tensor, torch.Tensor):
         """
@@ -48,7 +49,14 @@ class BengaliDataBatchCollator(object):
         labels = [x[1] for x in batch]
         labels = torch.tensor(labels)
 
-        inputs = np.array([x[0] for x in batch])
+        if self.do_augmix and self.is_training:
+            inputs = batch[0]
+            inputs = np.array([x[0] for x in inputs])
+            inputs_aug1 = np.array([x[1] for x in inputs])
+            inputs_aug2 = np.array([x[2] for x in inputs])
+            inputs = np.vstack([inputs, inputs_aug1, inputs_aug2])
+        else:
+            inputs = np.array([x[0] for x in batch])
 
         inputs = torch.tensor(inputs)
         inputs = inputs.permute([0, 3, 1, 2])
@@ -64,7 +72,7 @@ def build_data_loader(data_list: List, data_cfg: CfgNode, is_training: bool) -> 
     :return: data loader
     """
     dataset = BengaliDataset(data_list, data_cfg, is_training)
-    collator = BengaliDataBatchCollator()
+    collator = BengaliDataBatchCollator(is_training, data_cfg.DO_AUGMIX)
     batch_size = data_cfg.BATCH_SIZE
 
     # limit the number of works based on CPU number.
