@@ -40,7 +40,7 @@ MODEL:
   NORMALIZATION_FN: BN
   BACKBONE:
     NAME: mobilenet_v2
-    PRETRAINED_PATH: C:/Users/nasty/data-science/kaggle/bengali/bengali-julien/models/mobilenet_v2-b0353104.pth
+    PRETRAINED_PATH: C:/Users/nasty/data-science/kaggle/bengali-git/bengali.ai/models/mobilenet_v2-b0353104.pth
   HEAD:
     NAME: simple_head
     ACTIVATION: leaky_relu
@@ -61,7 +61,7 @@ MODEL:
     MIXUP:
       CUTMIX_ALPHA: 1
       MIXUP_ALPHA: 0.4
-      CUTMIX_PROB: 0.4
+      CUTMIX_PROB: 0.0
     OPTIMIZER:
       OPTIMIZER: adam
       BASE_LR: 0.001
@@ -73,5 +73,5 @@ MODEL:
       NAME: xentropy
       OHEM_RATE: 1.0
 
-OUTPUT_PATH: ''
+OUTPUT_PATH: C:/Users/nasty/data-science/kaggle/bengali-git/bengali.ai/models
 RESUME_PATH: ''

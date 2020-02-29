@@ -29,6 +29,7 @@ var/
 *.manifest
 *.spec
 
+results/
 # Installer logs
 pip-log.txt
 pip-delete-this-directory.txt
@@ -78,6 +79,8 @@ target/
 # exclude data from source control by default
 /data/
 /models/
+/src/models
+/src/config/mobilnet_V2/
 
 # Mac OS-specific storage files
 .DS_Store

@@ -19,14 +19,16 @@ def build_optimizer(model: torch.nn.Module, opti_cfg: CfgNode) -> Optimizer:
     lr = opti_cfg.BASE_LR
     return optimzers[opti_type](parameters, lr=lr)
 
-def build_scheduler(optimizer: torch.optim, scheduler_cfg: CfgNode, steps_per_epoch):
+def build_scheduler(optimizer: torch.optim, scheduler_cfg: CfgNode, epochs, steps_per_epoch):
     """
     OneCycleLR:    https://arxiv.org/abs/1708.07120
     """
     scheduler = OneCycleLR(optimizer, 
                            max_lr=scheduler_cfg.MAX_LR, 
                            steps_per_epoch=steps_per_epoch,
-                           epochs=scheduler_cfg.TOTAL_EPOCHS,
+                           epochs=epochs,
+                           pct_start=0.5,
                            anneal_strategy='cos', 
+                           div_factor=50,
                            cycle_momentum=True)
     return scheduler
