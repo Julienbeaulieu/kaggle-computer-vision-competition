@@ -91,3 +91,7 @@ target/
 .idea/
 __pycache__
 configs/eai_server_paths.yaml
+
+# inbox folder for experiment runs should stay local
+configs/inbox
+
