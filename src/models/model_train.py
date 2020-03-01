@@ -32,7 +32,7 @@ from dotenv import find_dotenv, load_dotenv
 
 # For MLFlow integration
 from mlflow import log_metrics, log_param, log_artifact
-
+import mlflow
 
 # For Tensorboard integration
 from torch.utils.tensorboard import SummaryWriter
@@ -60,6 +60,13 @@ def train(cfg: CfgNode):
     :param cfg:
     :return:
     """
+    # Create writable timestamp for easier record keeping
+    timestamp = datetime.now().isoformat(sep="T", timespec="auto")
+    name_timestamp = timestamp.replace(":", "_")
+
+    # Start the mlflow run:
+    mlflow.start_run(run_name=name_timestamp)
+
     # Check valid output path, set path from the path_cfg_override modules respectively
     assert cfg.OUTPUT_PATH != ''
     path_output = cfg.OUTPUT_PATH  # output folder
@@ -70,9 +77,7 @@ def train(cfg: CfgNode):
     if not os.path.exists(path_output):
         os.makedirs(path_output)
 
-    # Create writable timestamp for easier record keeping
-    timestamp = datetime.now().isoformat(sep="T", timespec="auto")
-    name_timestamp = timestamp.replace(":", "_")
+
 
     # Make result folders if they do not exist.
     results_dir = (Path(path_output) / name_timestamp)
@@ -173,21 +178,21 @@ def train(cfg: CfgNode):
 
 
         train_total_err = train_result['loss']
-        writer_tensorboard.add_scalar('Loss/train', train_total_err, global_step=epoch)
+        writer_tensorboard.add_scalar('Loss/Train', train_total_err, global_step=epoch)
         #log_metric('loss', train_total_err)
 
         train_total_acc = train_result['acc']
-        writer_tensorboard.add_scalar('Accuracy/train', train_total_acc, global_step=epoch)
+        writer_tensorboard.add_scalar('Accuracy/Train', train_total_acc, global_step=epoch)
         #log_metric('acc', train_total_acc)
 
         train_kaggle_score = train_result['kaggle_score']
         writer_tensorboard.add_scalar('Kaggle_Score/Train', train_kaggle_score, global_step=epoch)
         #log_metric('kaggle_score', train_kaggle_score)
 
-        dict_metrics_train={
-            'Loss/Train', train_total_err,
-            'Accuracy/Train', train_total_acc,
-            'Kaggle_Score/Train', train_kaggle_score,
+        dict_metrics_train = {
+            'Loss/Train': train_total_err,
+            'Accuracy/Train': train_total_acc,
+            'Kaggle_Score/Train': train_kaggle_score,
         }
         log_metrics(dict_metrics_train, step=epoch)
 
@@ -219,12 +224,12 @@ def train(cfg: CfgNode):
         val_kaggle_score = val_result['kaggle_score']
         writer_tensorboard.add_scalar('Kaggle_Score/Val', val_kaggle_score, global_step=epoch)
 
-        dict_metrics_train={
-            'Loss/Validation', val_total_err,
-            'Accuracy/Validation', val_total_acc,
-            'Kaggle_Score/Validation', val_kaggle_score,
+        dict_metrics_val = {
+            'Loss/Validation': val_total_err,
+            'Accuracy/Validation': val_total_acc,
+            'Kaggle_Score/Validation': val_kaggle_score,
         }
-        log_metrics(dict_metrics_train, step=epoch)
+        log_metrics(dict_metrics_val, step=epoch)
 
         # Write to disk.
         writer_tensorboard.flush()
@@ -269,7 +274,7 @@ def train(cfg: CfgNode):
         }
         pickle.dump(epoch_result, open(os.path.join(results_dir, 'result_epoch_{0}.p'.format(epoch)), 'wb'))
 
-
+    mlflow.end_run()
 if __name__ == '__main__':
 
     # Obtain some key arguments with regard to the path of output, data, path_cfg_override files.

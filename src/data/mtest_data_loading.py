@@ -18,11 +18,15 @@ def benchmark_data_loading(train: bool = False, iterations: int = 100):
     :return:
     """
 
+    time_start = time.time()
+
     # Load pickle data?
     if train:
         train_data = pickle.load(open(os.path.join(PATH_DATA_INTERIM, 'train_data.p'), 'rb'))
     else:
         train_data = pickle.load(open(os.path.join(PATH_DATA_INTERIM, 'val_data.p'), 'rb'))
+    time_end = time.time()
+    print(f"Total time it took to load the train/val data and labels: {time_end - time_start}")
 
     # Build the Pytorch data loader based on the YAML configuraiton.
     data_loader = build_data_loader(train_data, cfg.DATASET, True)
@@ -40,3 +44,6 @@ def benchmark_data_loading(train: bool = False, iterations: int = 100):
     time_end = time.time()
 
     print(f"Total time it took to load {num_frames} frames and labels: {time_end - time_start}")
+
+if __name__=="__main__":
+    benchmark_data_loading(train=True, iterations=5)

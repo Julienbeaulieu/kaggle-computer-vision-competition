@@ -2,14 +2,14 @@
 
 train model
 Usage:
-    train.py -o=<path> [--data_cfg=<path>]  [--cfg=<path>]
+    train.py -path_output=<path> [--path_cfg_data=<path>]  [--path_cfg_override=<path>]
     train.py -h | --help
 
 Options:
     -h --help               show this screen help
-    -o=<path>               output path
-    --data_cfg=<path>       data config path [default: configs/data.yaml]
-    --cfg=<path>            training config path
+    -path_output=<path>               output path
+    --path_cfg_data=<path>       data config path [default: configs/data.yaml]
+    --path_cfg_override=<path>            training config path
 """
 
 import os
@@ -235,9 +235,9 @@ def train(cfg: CfgNode):
 if __name__ == '__main__':
 
     arguments = docopt(__doc__, argv=None, help=True, version=None, options_first=False)
-    output_path = arguments['-o']
-    data_path = arguments['--data_cfg']
-    cfg_path = arguments['--cfg']
+    output_path = arguments['-path_output']
+    data_path = arguments['--path_cfg_data']
+    cfg_path = arguments['--path_cfg_override']
     cfg = get_cfg_defaults()
     cfg.merge_from_file(data_path)
     if cfg_path is not None:
