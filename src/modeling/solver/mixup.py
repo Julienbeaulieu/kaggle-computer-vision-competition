@@ -38,7 +38,7 @@ def mixup(data, labels, alpha=0.4, cut_mix=False):
         lam = 1 - ((bbx1 - bbx1)) * (bby2 - bby1) / (data.size()[-1] * data.size()[-2])
     else:
         # mixup
-        data = data / lam + shuffled_data * (1 - lam)
+        data = data * lam + shuffled_data * (1 - lam)
     targets = [targets1, shuffled_targets1, targets2, shuffled_targets2, targets3, shuffled_targets3, lam]
 
     return data, targets

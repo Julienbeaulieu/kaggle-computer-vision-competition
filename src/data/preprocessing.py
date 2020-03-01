@@ -72,6 +72,10 @@ class Preprocessor(object):
         self.normalize_mean = dataset_cfg.get('NORMALIZE_MEAN')
         self.normalize_std = dataset_cfg.get('NORMALIZE_STD')
 
+        if not self.to_rgb:
+            self.normalize_mean = np.mean(self.normalize_mean)
+            self.normalize_std = np.mean(self.normalize_std)
+
     @staticmethod
     def generate_color_augmentation(aug_cfg: CfgNode) -> Union[Compose, None]:
         """
@@ -143,18 +147,10 @@ class Preprocessor(object):
         :return : transformed data
         """
         x = img
-        # shape augment
-        if is_training and self.shape_aug is not None:
-            x = self.shape_aug(image=x)['image']
 
         # crop
         if self.crop:
             x = content_crop(x, pad_to_square=True, white_background=True)
-
-        # color augment
-        if is_training and self.color_aug is not None:
-            x = self.color_aug(image=x)['image']
-            x = self.cutout_aug(image=x)['image']
 
         # resize
         x = resize(x, self.resize_shape)
@@ -163,13 +159,25 @@ class Preprocessor(object):
         if self.to_rgb:
             x = np.repeat(np.expand_dims(x, axis=-1), 3, axis=-1)
 
+        # shape augment
+        if is_training and self.shape_aug is not None:
+            x = self.shape_aug(image=x)['image']
+
+        # color augment
+        if is_training and self.color_aug is not None:
+            x = self.color_aug(image=x)['image']
+            x = self.cutout_aug(image=x)['image']
+       
+
         if not normalize:
             return x
+        
+        x = self.normalize_img(x)
+        return x
 
+    def normalize_img(self, x: ndarray) -> ndarray:
         # normalize to 0-1
         x = x / 255.
-
         if self.normalize_mean is not None:
             x = (x - self.normalize_mean) / self.normalize_std
-
         return x
