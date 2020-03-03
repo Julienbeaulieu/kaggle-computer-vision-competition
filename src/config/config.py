@@ -1,5 +1,8 @@
+import os
+import warnings
+
+from dotenv import find_dotenv, load_dotenv
 from yacs.config import CfgNode as ConfigurationNode
-from src.data.load_datasets import update_cfg_using_dotenv
 from pathlib import Path
 
 # YACS overwrite these settings using YAML, all YAML variables MUST BE defined here first
@@ -144,3 +147,24 @@ def combine_cfgs(path_cfg_data: Path=None, path_cfg_override: Path=None):
         cfg_base.merge_from_list(list_cfg)
 
     return cfg_base
+
+
+def update_cfg_using_dotenv() -> list:
+    """
+    In case when there are dotenvs, try to return list.
+    :return: empty list or overwriting information
+    """
+    # If .env not found, bail
+    if find_dotenv() == '':
+        warnings.warn(".env files not found. YACS config file merging aborted.")
+        return []
+
+    # Load env.
+    load_dotenv(find_dotenv(), verbose=True)
+
+    # Load variables
+    path_overwrite_keys = ["DATASET.TRAIN_DATA_PATH", os.getenv("DATASET.TRAIN_DATA_PATH"),
+                           "DATASET.VAL_DATA_PATH", os.getenv("DATASET.VAL_DATA_PATH"),
+                           "MODEL.BACKBONE.PRETRAINED_PATH", os.getenv("MODEL.BACKBONE.PRETRAINED_PATH"),
+                           "MODEL.SOLVER.LOSS.LABELS_WEIGHTS_PATH", os.getenv("MODEL.SOLVER.LOSS.LABELS_WEIGHTS_PATH")]
+    return path_overwrite_keys

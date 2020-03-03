@@ -14,27 +14,7 @@ PATH_DATA_INTERIM=os.getenv("PATH_DATA_INTERIM")
 PATH_DATA_RAW=os.getenv("PATH_DATA_RAW")
 import pandas as pd
 from typing import List
-import warnings
 
-def update_cfg_using_dotenv() -> list:
-    """
-    In case when there are dotenvs, try to return list.
-    :return: empty list or overwriting information
-    """
-    # If .env not found, bail
-    if find_dotenv() == '':
-        warnings.warn(".env files not found. YACS config file merging aborted.")
-        return []
-
-    # Load env.
-    load_dotenv(find_dotenv(), verbose=True)
-
-    # Load variables
-    path_overwrite_keys = ["DATASET.TRAIN_DATA_PATH", os.getenv("DATASET.TRAIN_DATA_PATH"),
-                           "DATASET.VAL_DATA_PATH", os.getenv("DATASET.VAL_DATA_PATH"),
-                           "MODEL.BACKBONE.PRETRAINED_PATH", os.getenv("MODEL.BACKBONE.PRETRAINED_PATH"),
-                           "MODEL.SOLVER.LOSS.LABELS_WEIGHTS_PATH", os.getenv("MODEL.SOLVER.LOSS.LABELS_WEIGHTS_PATH")]
-    return path_overwrite_keys
 
 def get_image_data(p_data:List[tuple]):
     """

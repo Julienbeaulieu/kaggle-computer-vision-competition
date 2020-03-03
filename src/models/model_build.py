@@ -12,28 +12,34 @@ from src.config.config import get_cfg_defaults
 from src.modeling.backbone.build import build_backbone, BACKBONE_REGISTRY
 from src.modeling.meta_arch.baseline import build_baseline_model
 
+class BuildMixin:
 
+    def build_model(self):
+        cfg = get_cfg_defaults()
+        cfg.merge_from_file(r"C:\Git\bengali.ai\configs\DevYang.yaml")
 
-cfg = get_cfg_defaults()
-cfg.merge_from_file(r"C:\Git\bengali.ai\configs\DevYang.yaml")
+        if self.model is None:
+            # Specify how the model will be build.
+            self.model = build_baseline_model(cfg.MODEL)
 
-# Specify how the model will be build.
-model = build_baseline_model(cfg.MODEL)
+        # Generate randomized input tensor to test size.
+        inputs = torch.rand(2, 3, 128, 128)
 
-# Generate randomized input tensor to test size.
-inputs = torch.rand(2, 3, 128, 128)
+        # Get an estimation of the output size. 2
+        outputs = self.model(inputs)
 
-# Get an estimation of the output size. 2
-outputs = model(inputs)
+        print("===================")
+        print("Backbone MODULES:")
+        print("===================")
 
-# Print out all the model backbone modules.
-for x in model.backbone.modules():
-    print(x)
+        # Print out all the model backbone modules.
+        for x in self.model.backbone.modules():
+            print(x)
 
-print("===================")
-print("HEAD MODULES:")
-print("===================")
+        print("===================")
+        print("HEAD MODULES:")
+        print("===================")
 
-# Print out all the model backbone modules.
-for y in model.head.modules():
-    print(y)
+        # Print out all the model backbone modules.
+        for y in self.model.head.modules():
+            print(y)
