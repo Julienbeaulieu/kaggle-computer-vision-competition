@@ -72,6 +72,10 @@ class Preprocessor(object):
         self.normalize_mean = dataset_cfg.get('NORMALIZE_MEAN')
         self.normalize_std = dataset_cfg.get('NORMALIZE_STD')
 
+        if not self.to_rgb:
+            self.normalize_mean = np.mean(self.normalize_mean)
+            self.normalize_std = np.mean(self.normalize_std)
+
     @staticmethod
     def generate_color_augmentation(aug_cfg: CfgNode) -> Union[Compose, None]:
         """
@@ -85,14 +89,14 @@ class Preprocessor(object):
 
         if aug_cfg.BLURRING_PROB > 0:
             blurring = OneOf([
-                MotionBlur(blur_limit=7, p=1),
-                MedianBlur(blur_limit=7, p=1),
-                Blur(blur_limit=7, p=1),
+                MotionBlur(aug_cfg.BLUR_LIMIT, p=1),
+                MedianBlur(aug_cfg.BLUR_LIMIT, p=1),
+                Blur(aug_cfg.BLUR_LIMIT, p=1),
             ], p=aug_cfg.BLURRING_PROB)
             color_aug_list.append(blurring)
 
         if aug_cfg.GAUSS_NOISE_PROB > 0:
-            color_aug_list.append(GaussNoise(p=aug_cfg.GAUSS_NOISE_PROB))
+            color_aug_list.append(GaussNoise(var_limit=aug_cfg.GAUSS_VAR_LIMIT, p=aug_cfg.GAUSS_NOISE_PROB))
 
         if len(color_aug_list) > 0:
             color_aug = Compose(color_aug_list, p=1)
@@ -126,7 +130,8 @@ class Preprocessor(object):
         
         cutout_aug_list = []
         if aug_cfg.CUTOUT_PROB > 0:
-            cutout_aug_list.append(Cutout(num_holes=1, max_h_size=aug_cfg.HEIGHT, max_w_size=aug_cfg.WIDTH, p=aug_cfg.CUTOUT_PROB))
+            cutout_aug_list.append(Cutout(num_holes=1, max_h_size=aug_cfg.HEIGHT//2, max_w_size=aug_cfg.WIDTH//2, 
+                                        fill_value=255, p=aug_cfg.CUTOUT_PROB))
                                   
         if len(cutout_aug_list) > 0:
             cutout_aug = Compose(cutout_aug_list, p=1)
@@ -142,18 +147,10 @@ class Preprocessor(object):
         :return : transformed data
         """
         x = img
-        # shape augment
-        if is_training and self.shape_aug is not None:
-            x = self.shape_aug(image=x)['image']
 
         # crop
         if self.crop:
             x = content_crop(x, pad_to_square=True, white_background=True)
-
-        # color augment
-        if is_training and self.color_aug is not None:
-            x = self.color_aug(image=x)['image']
-            x = self.cutout_aug(image=x)['image']
 
         # resize
         x = resize(x, self.resize_shape)
@@ -162,13 +159,25 @@ class Preprocessor(object):
         if self.to_rgb:
             x = np.repeat(np.expand_dims(x, axis=-1), 3, axis=-1)
 
+        # shape augment
+        if is_training and self.shape_aug is not None:
+            x = self.shape_aug(image=x)['image']
+
+        # color augment
+        if is_training and self.color_aug is not None:
+            x = self.color_aug(image=x)['image']
+            x = self.cutout_aug(image=x)['image']
+       
+
         if not normalize:
             return x
+        
+        x = self.normalize_img(x)
+        return x
 
+    def normalize_img(self, x: ndarray) -> ndarray:
         # normalize to 0-1
         x = x / 255.
-
         if self.normalize_mean is not None:
             x = (x - self.normalize_mean) / self.normalize_std
-
         return x

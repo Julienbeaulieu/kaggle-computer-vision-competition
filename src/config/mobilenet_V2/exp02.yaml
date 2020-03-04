@@ -1,5 +1,0 @@
- 
-MODEL:
-  SOLVER: 
-    SCHEDULER:
-      TOTAL_EPOCHS: 2
