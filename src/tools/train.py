@@ -55,7 +55,7 @@ def train(cfg: CfgNode):
         val_fold = cfg.DATASET.VALIDATION_FOLD
         train_data = []
         val_data = []
-        for idx, entries in all_data_folds:
+        for idx, entries in enumerate(all_data_folds):
             if idx == val_fold:
                 val_data = entries
             else:

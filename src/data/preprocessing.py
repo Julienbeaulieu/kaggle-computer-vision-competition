@@ -40,7 +40,7 @@ def content_crop(img: ndarray, white_background: bool):
 
 
 def pad_to_square(img: ndarray, white_background: bool):
-    ly, lx, _ = img.shape
+    ly, lx = img.shape
 
     l = max(lx, ly) + 16
     if white_background:
