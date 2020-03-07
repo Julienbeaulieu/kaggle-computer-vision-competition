@@ -46,7 +46,7 @@ def build_scheduler(optimizer: Optimizer, scheduler_cfg: CfgNode):
         return scheduler
     elif scheduler_type == 'reduce_on_plateau':
         gamma = scheduler_cfg.LR_REDUCE_GAMMA
-        scheduler = ReduceLROnPlateau(optimizer, factor=gamma)
+        scheduler = ReduceLROnPlateau(optimizer, patience=5, factor=gamma)
         return scheduler
     else:
         raise Exception('scheduler name invalid, choices are unchange/multi_steps/reduce_on_plateau')

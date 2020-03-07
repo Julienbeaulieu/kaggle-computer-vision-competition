@@ -301,4 +301,14 @@ def build_se_resnext50(backbone_cfg: CfgNode) -> nn.Module:
         pretrained_path = backbone_cfg['PRETRAINED_PATH']
         state_dict = torch.load(pretrained_path, map_location='cpu')
         model.load_state_dict(state_dict, strict=False)
+        if not backbone_cfg.LOAD_FIRST_BLOCK:
+            for m in model.layer0.modules():
+                if isinstance(m, nn.Conv2d):
+                    nn.init.kaiming_normal_(m.weight, mode='fan_out')
+                    if m.bias is not None:
+                        nn.init.zeros_(m.bias)
+                elif isinstance(m, nn.GroupNorm):
+                    nn.init.ones_(m.weight)
+                    nn.init.zeros_(m.bias)
+
     return model

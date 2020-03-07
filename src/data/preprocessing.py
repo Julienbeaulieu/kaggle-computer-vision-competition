@@ -2,7 +2,7 @@ import numpy as np
 from numpy import ndarray
 from yacs.config import CfgNode
 from albumentations import OneOf, Compose, MotionBlur, MedianBlur, Blur, RandomBrightnessContrast, GaussNoise, \
-    GridDistortion, Rotate
+    GridDistortion, Rotate, HorizontalFlip
 from .grid_mask import GridMask
 from typing import Union, List, Tuple
 from .augmix import augmentations, augment_and_mix
@@ -10,13 +10,12 @@ from .augmix import augmentations, augment_and_mix
 from cv2 import resize
 
 
-def content_crop(img: ndarray, pad_to_square: bool, white_background: bool):
+def content_crop(img: ndarray, white_background: bool):
     """
 
     https://www.kaggle.com/iafoss/image-preprocessing-128x128
 
     :param img: grapheme image matrix
-    :param pad_to_square:  whether pad to square (preserving aspect ratio)
     :param white_background: whether the image
     :return: cropped image matrix
     """
@@ -37,22 +36,18 @@ def content_crop(img: ndarray, pad_to_square: bool, white_background: bool):
     ymax = ymax + 10 if (ymax < 127) else 137
     img = img[ymin:ymax, xmin:xmax]
 
-    # remove lo intensity pixels as noise
+    return img
+
+
+def pad_to_square(img: ndarray, white_background: bool):
+    ly, lx, _ = img.shape
+
+    l = max(lx, ly) + 16
     if white_background:
-        img[img > 235] = 255
+        constant_pad = 255
     else:
-        img[img < 28] = 0
-
-    if pad_to_square:
-        lx, ly = xmax - xmin, ymax - ymin
-        l = max(lx, ly) + 16
-        # make sure that the aspect ratio is kept in rescaling
-        if white_background:
-            constant_pad = 255
-        else:
-            constant_pad = 0
-        img = np.pad(img, [((l - ly) // 2,), ((l - lx) // 2,)], mode='constant', constant_values=constant_pad)
-
+        constant_pad = 0
+    img = np.pad(img, [((l - ly) // 2,), ((l - lx) // 2,)], mode='constant', constant_values=constant_pad)
     return img
 
 
@@ -128,7 +123,8 @@ class Preprocessor(object):
             )
         if aug_cfg.GRID_DISTORTION_PROB > 0:
             shape_aug_list.append(GridDistortion(p=aug_cfg.GRID_DISTORTION_PROB))
-
+        if aug_cfg.HORIZONTAL_FLIP_PROB > 0:
+            shape_aug_list.append(HorizontalFlip(p=aug_cfg.HORIZONTAL_FLIP_PROB ))
         if len(shape_aug_list) > 0:
             shape_aug = Compose(shape_aug_list, p=1)
             return shape_aug
@@ -149,7 +145,9 @@ class Preprocessor(object):
             x = 255 - x
         # crop
         if self.crop:
-            x = content_crop(x, self.pad, self.white_background)
+            x = content_crop(x, self.white_background)
+        if self.pad:
+            x = pad_to_square(x, self.white_background)
         # resize
         x = resize(x, self.resize_shape)
         # to RGB
