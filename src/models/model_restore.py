@@ -7,27 +7,27 @@ from src.modeling.meta_arch import build_baseline_model
 from src.models.model_predict import device
 
 
-class RestoreMixin:
+class RestorationMixin:
     """
     This is a MixIn class, provid class based method to regular models.
     To REUSE this function, make sure the model class inherit from this
     MUST NOT HAVE class level data and variables.
     """
 
-    def restore_model(self, path_cfg: ConfigurationNode, path_weight: Path):
+    def restore(self, path_weight: Path, config: ConfigurationNode = None):
         """
         Instantiate the model using Cfg and Weight specified.
-        :param path_cfg:
+        :param config:
         :param path_weight:
         :return:
         """
-        # Use default config:
-        model_config = ConfigurationNode()
-        model_config.merge_from_file(path_cfg)
+        # Use Class default config:
+        if config is None:
+            config = self.config
 
         if self.model is None:
             # Build model.
-            self.model: torch.nn.Module = build_baseline_model(model_config)
+            self.model: torch.nn.Module = build_baseline_model(config)
 
         # Load weight dictionary
         state_dict = torch.load(path_weight, map_location='cpu')

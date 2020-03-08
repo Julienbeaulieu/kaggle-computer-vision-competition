@@ -11,16 +11,26 @@ import torch
 from src.config.config import get_cfg_defaults
 from src.modeling.backbone.build import build_backbone, BACKBONE_REGISTRY
 from src.modeling.meta_arch.baseline import build_baseline_model
+from yacs.config import CfgNode as ConfigurationNode
 
 class BuildMixin:
 
-    def build_model(self):
-        cfg = get_cfg_defaults()
-        cfg.merge_from_file(r"C:\Git\bengali.ai\configs\DevYang.yaml")
+    def build(self,
+              config: ConfigurationNode = None,
+              path_yaml: str = r"C:\Git\bengali.ai\configs\DevYang.yaml"
+              ):
+        """
+        This mixin function build the models using the information provided.
+        :return:
+        """
+
+        # No argument, use default class object.
+        if config is None:
+            config = self.config
 
         if self.model is None:
             # Specify how the model will be build.
-            self.model = build_baseline_model(cfg.MODEL)
+            self.model = build_baseline_model(config.MODEL)
 
         # Generate randomized input tensor to test size.
         inputs = torch.rand(2, 3, 128, 128)
