@@ -167,7 +167,6 @@ class Preprocessor(object):
         if is_training and self.color_aug is not None:
             x = self.color_aug(image=x)['image']
             x = self.cutout_aug(image=x)['image']
-       
 
         if not normalize:
             return x

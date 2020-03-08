@@ -106,16 +106,27 @@ def train(cfg, debug=False):
     solver_cfg = cfg.MODEL.SOLVER
 
     # Epochs
-    current_epoch = 0
+    if cfg.RESUME_PATH == "":
+        current_epoch = 0 # manually change this... refactor
     total_epochs = solver_cfg.SCHEDULER.TOTAL_EPOCHS
+    current_epoch = 0 # manually change this... refactor
 
-    # Build optimizer
+
+    # Build optimizerW
     opti_cfg = solver_cfg.OPTIMIZER
     optimizer = build_optimizer(model, opti_cfg)
 
     # Build scheduler
+
     sched_cfg = solver_cfg.SCHEDULER
     scheduler = build_scheduler(optimizer, sched_cfg, steps_per_epoch=np.int(len(train_loader)), epochs=total_epochs)
+
+    # Resume training with correct optimizer and scheduler
+    if cfg.RESUME_PATH != "" and sched_cfg.PROG_RESIZE is False:
+        if 'optimizer_state' in checkpoint:
+            optimizer.load_state_dict(checkpoint['optimizer_state'])
+        if 'scheduler_state' in checkpoint and scheduler is not None:
+            scheduler.load_state_dict(checkpoint['scheduler_state'])
 
     # Build evaluator with or without Mixup
     mixup_training = solver_cfg.MIXUP_AUGMENT
@@ -166,28 +177,27 @@ def train(cfg, debug=False):
             if idx % 100 == 0:
                 print(idx, eval_result['loss'], eval_result['acc'])
 
-
-        
         ###############################
         # Send images to Tensorboard 
         # -- could also do this outside the loop with xb, yb = next(itr(DL))
         ###############################
 
-        # # Get the std and mean of each channel
-        std = torch.FloatTensor(cfg.DATASET.NORMALIZE_STD).view(3,1,1)
-        m = torch.FloatTensor(cfg.DATASET.NORMALIZE_MEAN).view(3,1,1)
+        if epoch == 0: 
+            # Get the std and mean of each channel
+            std = torch.FloatTensor(cfg.DATASET.NORMALIZE_STD).view(3,1,1)
+            m = torch.FloatTensor(cfg.DATASET.NORMALIZE_MEAN).view(3,1,1)
 
-        # Un-normalize images, send mean and std to gpu for mixuped images
-        imgs, imgs_mixup = ((inputs*std)+m)*255, ((input_data*std.cuda())+m.cuda())*255
-        imgs, imgs_mixup = imgs.type(torch.uint8), imgs_mixup.type(torch.uint8)
-        img_grid = torchvision.utils.make_grid(imgs)
-        img_grid_mixup = torchvision.utils.make_grid(imgs_mixup)
+            # Un-normalize images, send mean and std to gpu for mixuped images
+            imgs, imgs_mixup = ((inputs*std)+m)*255, ((input_data*std.cuda())+m.cuda())*255
+            imgs, imgs_mixup = imgs.type(torch.uint8), imgs_mixup.type(torch.uint8)
+            img_grid = torchvision.utils.make_grid(imgs)
+            img_grid_mixup = torchvision.utils.make_grid(imgs_mixup)
 
-        img_grid = torchvision.utils.make_grid(imgs)
-        img_grid_mixup = torchvision.utils.make_grid(imgs_mixup)
+            img_grid = torchvision.utils.make_grid(imgs)
+            img_grid_mixup = torchvision.utils.make_grid(imgs_mixup)
 
-        writer_tensorboard.add_image("images no mixup", img_grid)
-        writer_tensorboard.add_image("images with mixup", img_grid_mixup)
+            writer_tensorboard.add_image("images no mixup", img_grid)
+            writer_tensorboard.add_image("images with mixup", img_grid_mixup)
 
         ####################
         # Training metrics
@@ -208,18 +218,24 @@ def train(cfg, debug=False):
         train_kaggle_score = train_result['kaggle_score']
         writer_tensorboard.add_scalar('Kaggle_Score/train', train_kaggle_score, global_step=epoch)
 
-        conv2d = model.backbone.features[17].conv[0][0].weight
-        conv2d_grad = model.backbone.features[17].conv[0][0].weight.grad
-        conv2d_convBNReLU = model.backbone.features[1].conv[0][0].weight
-        conv2d_convBNReLU_grad = model.backbone.features[1].conv[0][0].weight.grad
+        lr = optimizer.param_groups[-1]['lr']
 
-        writer_tensorboard.add_histogram('conv2d.weight', conv2d, epoch)
-        writer_tensorboard.add_histogram('conv2d.weight.grad', conv2d_grad, epoch)
-        writer_tensorboard.add_histogram('conv2d_BNReLU.weight', conv2d_convBNReLU, epoch)
-        writer_tensorboard.add_histogram('conv2d_BNReLU.weight.grad', conv2d_convBNReLU_grad, epoch)
+        # conv2d = model.backbone.features[17].conv[0][0].weight
+        # conv2d_grad = model.backbone.features[17].conv[0][0].weight.grad
+        # conv2d_convBNReLU = model.backbone.features[1].conv[0][0].weight
+        # conv2d_convBNReLU_grad = model.backbone.features[1].conv[0][0].weight.grad
+
+        # writer_tensorboard.add_histogram('conv2d.weight', conv2d, epoch)
+        # writer_tensorboard.add_histogram('conv2d.weight.grad', conv2d_grad, epoch)
+        # writer_tensorboard.add_histogram('conv2d_BNReLU.weight', conv2d_convBNReLU, epoch)
+        # writer_tensorboard.add_histogram('conv2d_BNReLU.weight.grad', conv2d_convBNReLU_grad, epoch)
 
         # Print results
-        print("Epoch {0} Training, Loss {1}, Acc {2}, kaggle Score {3}".format(epoch, train_total_err, train_total_acc, train_kaggle_score))
+        print("Epoch {0} Training, Loss {1}, Acc {2}, kaggle Score {3}, lr {4}".format(epoch, 
+                                                                                       train_total_err, 
+                                                                                       train_total_acc, 
+                                                                                       train_kaggle_score,
+                                                                                       lr))
         evaluator.clear_cache()
 
         ###############################
@@ -255,8 +271,9 @@ def train(cfg, debug=False):
 
         # track learning rate because we used OneCycleLR scheduler
         lr = optimizer.param_groups[-1]['lr']
+        # momentum = optimizer.param_groups[-1]['momentum']
         writer_tensorboard.add_scalar('learning_rate', lr, global_step=epoch)
-
+        # writer_tensorboard.add_scalar('momentum', momentum, global_step=epoch)
         # Write to disk
         writer_tensorboard.flush()
 
@@ -308,6 +325,7 @@ def train(cfg, debug=False):
             'val_result': val_result
         }   
         pickle.dump(epoch_results, open(os.path.join(results_dir, 'result_epoch_{0}.p'.format(epoch)), 'wb'))
+    
     
     # Add model to Tensorboard to inspect the details of the architecture
     writer_tensorboard.add_graph(model, input_data)
