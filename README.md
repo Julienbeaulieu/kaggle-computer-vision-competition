@@ -3,55 +3,71 @@ Bengali.AI
 
 This is the combined effort to build a pipeline in PyTorch to attempt Kaggle competition for Bengali.AI
 
+In this competition, we are given the images of a handwritten Bengali grapheme and are challenged to separately classify three constituent elements in the image: grapheme root, vowel diacritics, and consonant diacritics. 
+
 Project Organization
 ------------
 
-    ├── LICENSE
-    ├── Makefile           <- Makefile with commands like `make data` or `make train`
-    ├── README.md          <- The top-level README for developers using this project.
+    ├── README.md          
     ├── data
-    │   ├── external       <- Data from third party sources.
-    │   ├── interim        <- Intermediate data that has been transformed.
-    │   ├── processed      <- The final, canonical data sets for modeling.
-    │   └── raw            <- The original, immutable data dump.
+    │   ├── external        <- Data from third party sources.
+    │   ├── interim         <- Intermediate data that has been transformed.
+    │   ├── processed       <- The final, canonical data sets for modeling.
+    │   └── raw             <- The original, immutable data dump.
     │
-    ├── docs               <- A default Sphinx project; see sphinx-doc.org for details
+    ├── notebooks           <- Jupyter notebooks for exploration and communication
     │
-    ├── models             <- Trained and serialized models, model predictions, or model summaries
+    ├── experiments         <- Trained models, predictions, experiment configs, Tensorboard logs, backups
+    │   ├─ exp01
+    │   │  ├── model_backups
+    │   │  ├── results
+    │   │  └── tensorboard logs
+    │   │
+    │   ├─ exp02
+    │   ...
     │
-    ├── notebooks          <- Jupyter notebooks. Naming convention is a number (for ordering),
-    │                         the creator's initials, and a short `-` delimited description, e.g.
-    │                         `1.0-jqp-initial-data-exploration`.
-    │
-    ├── references         <- Data dictionaries, manuals, and all other explanatory materials.
-    │
-    ├── reports            <- Generated analysis as HTML, PDF, LaTeX, etc.
-    │   └── figures        <- Generated graphics and figures to be used in reporting
-    │
-    ├── requirements.txt   <- The requirements file for reproducing the analysis environment, e.g.
+    ├── requirements.txt   <- The requirements file for reproducing the analysis environment,
     │                         generated with `pip freeze > requirements.txt`
     │
-    ├── setup.py           <- makes project pip installable (pip install -e .) so src can be imported
-    ├── src                <- Source code for use in this project.
-    │   ├── __init__.py    <- Makes src a Python module
-    │   │
-    │   ├── data           <- Scripts to download or generate data
-    │   │   └── make_dataset.py
-    │   │
-    │   ├── features       <- Scripts to turn raw data into features for modeling
-    │   │   └── build_features.py
-    │   │
-    │   ├── models         <- Scripts to train models and then use trained models to make
-    │   │   │                 predictions
-    │   │   ├── predict_model.py
-    │   │   └── train_model.py
-    │   │
-    │   └── visualization  <- Scripts to create exploratory and results oriented visualizations
-    │       └── visualize.py
-    │
-    └── tox.ini            <- tox file with settings for running tox; see tox.testrun.org
+    └── src                <- Source code for use in this project.
+        ├── config
+        │   ├── config.py  <- The default configs for the model. 
+        │   └── densenet121
+        │       ├── exp01_config.yaml <- Configs for a specific experiment. Overwrites default configs
+        │       └── exp02_config.yaml
+        │       
+        ├── data                  
+        │   ├── make_dataset.py  <- Script to generate data
+        │   ├── bengali_data.py  <- Custom Pytorch Dataset & Collator class; build_dataloader function
+        │   └── preprocessing.py <- Custom data augmentation class
+        │
+        ├── modeling         <- Scripts to create the model's architecture             
+        │   ├── backbone     <- Model's backbone architecture
+        │   │   └── densenet121.py
+        │   │
+        │   ├── layers       <- Custum layers specific to your project
+        │   │   └── linear.py
+        │   │
+        │   ├── meta_arch    <- Scripts to combine and build backbone + layers + head
+        │   │   ├── baseline.py
+        │   │   └── build.py
+        │   │
+        │   ├── head         <- Build the head of the model - in our case a classifier
+        │   │   ├── build.py
+        │   │   └── simple_head.py
+        │   │
+        │   └── solver       <- Scripts for building loss function, evaluation and optimizer
+        │       ├── loss
+        │       │   ├── build.py
+        │       │   └── softmax_cross_entropy.py
+        │       ├── evaluation.py
+        │       └── optimizer.py 
+        │ 
+        ├── tools            <- Training loop and custom tools for the project
+        │   ├── train.py
+        │   └── registry.py 
+        │ 
+        └── visualization  <- Scripts to create exploratory and results oriented visualizations or to store reports
+               └── visualize.py
 
 
---------
-
-<p><small>Project based on the <a target="_blank" href="https://drivendata.github.io/cookiecutter-data-science/">cookiecutter data science project template</a>. #cookiecutterdatascience</small></p>

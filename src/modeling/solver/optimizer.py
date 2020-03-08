@@ -27,8 +27,8 @@ def build_scheduler(optimizer: torch.optim, scheduler_cfg: CfgNode, epochs, step
                            max_lr=scheduler_cfg.MAX_LR, 
                            steps_per_epoch=steps_per_epoch,
                            epochs=epochs,
-                           pct_start=0.5,
-                           anneal_strategy='cos', 
-                           div_factor=50,
+                            pct_start=scheduler_cfg.PCT_START,
+                           anneal_strategy=scheduler_cfg.ANNEAL_STRATEGY, 
+                           div_factor=scheduler_cfg.DIV_FACTOR,
                            cycle_momentum=True)
     return scheduler

@@ -1,0 +1,87 @@
+import torch  
+import torch.nn as nn
+import torch.nn.functional as F
+from typing import List, Dict, Union
+from yacs.config import CfgNode
+from .build import LOSS_REGISTRY
+
+
+class LabelSmoothingCrossEntropy(torch.nn.Module):
+    """
+    Code copied from fastai2
+    
+    """
+    y_int = True
+    def __init__(self, eps:float=0.1, reduction='mean'): 
+        super(LabelSmoothingCrossEntropy, self).__init__()
+        self.eps,self.reduction = eps,reduction
+
+    def forward(self, output, target, weights):
+        c = output.size()[-1]
+        log_preds = F.log_softmax(output, dim=-1)
+        if self.reduction=='sum': loss = -log_preds.sum()
+        else:
+            loss = -log_preds.sum(dim=-1) #We divide by that size at the return line so sum and not mean
+            if self.reduction=='mean':  loss = loss.mean()
+        return loss*self.eps/c + (1-self.eps) * F.nll_loss(log_preds, target.long(), reduction=self.reduction)
+
+
+@LOSS_REGISTRY.register('label_smoothing_ce')
+class SoftmaxCE(torch.nn.Module):
+    """
+    Normal softmax cross entropy with added functionality
+    """
+
+    def __init__(self, loss_cfg: CfgNode, do_mixup: bool, weights: List, eps:float=0.1, reduction='mean', **kwargs):
+        """
+        :param weights: class weights
+        """
+        super(SoftmaxCE, self).__init__()
+
+        self.ohem_rate = loss_cfg.OHEM_RATE
+        self.do_mixup = do_mixup
+        self.eps = eps
+        self.reduction = reduction
+        self.weights = weights
+        self.loss_fn = LabelSmoothingCrossEntropy(eps, reduction)
+
+    def forward(self, logits, labels):
+        loss = 0
+        preds = torch.argmax(logits.float(), dim=1)
+        if self.do_mixup:
+            losses = self.compute_mixup_loss(logits, labels)
+            corrects = (labels[0] == preds)
+        else:
+            losses = self.loss_fn(logits, labels, self.weights)
+            corrects = (labels == preds)
+
+        if self.ohem_rate < 1:
+            loss += self.compute_ohem_loss(losses)
+        else:
+            loss += losses.mean()
+
+        acc = torch.sum(corrects) / (len(corrects) + 0.0)
+
+        return loss, acc
+
+    def compute_mixup_loss(self, logits: torch.Tensor, mixedup_labels_data: tuple):
+        """
+
+        :param logits: computed logits
+        :param mixedup_labels_data:
+        :return: 
+        """
+        labels, shuffled_labels, lam = mixedup_labels_data
+        if self.weights is not None:
+            loss = lam * self.loss_fn(logits, labels, torch.tensor(self.weights)) + (1 - lam) * self.loss_fn(logits, shuffled_labels, torch.tensor(self.weights))
+        else:
+            loss = lam * self.loss_fn(logits, labels) + (1 - lam) * self.loss_fn(logits, shuffled_labels)
+        return loss
+
+    def compute_ohem_loss(self, losses: torch.Tensor):
+        N = losses.shape[0]
+        keep_size = int(N * self.ohem_rate)
+        ohem_losses, _ = losses.topk(keep_size)
+        loss = ohem_losses.mean()
+        return loss
+

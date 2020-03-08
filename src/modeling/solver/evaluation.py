@@ -7,40 +7,6 @@ from torch import nn
 from sklearn.metrics import classification_report
 from .loss import build_loss
 
-# class EvalBlock(nn.Module):
-
-#     def __init__(self, solver_cfg: CfgNode, weights: Union[None, List[float]]):
-#         super(EvalBlock, self).__init__()
-#         loss_fn = solver_cfg.LOSS_FN 
-#         if weights is not None:
-#             self.loss_fn = LOSS_FN[loss_fn](torch.tensor(weights), reduction='none')
-#         else:
-#             self.loss_fn = LOSS_FN[loss_fn](reduction='none')
-#         self.ohem_rate = solver_cfg.OHEM_RATE
-
-#     def forward(self, logits, labels):
-#         losses = self.loss_fn(logits, labels) # CrossEntropyLoss -> takes xentropy(x, y)
-#         if self.ohem_rate < 1:
-#             loss = self.compute_ohem_loss(losses)
-#         else:
-#             loss = losses.mean()
-#         preds = torch.argmax(logits, dim=1)
-#         corrects = (labels == preds)
-#         acc = torch.sum(corrects) / (len(corrects) + 0.0)
-#         return loss, acc
-
-#     def compute_ohem_loss(self, losses: torch.Tensor):
-#         N = losses.shape[0]
-
-#         # What % of examples should we keep for our loss function? 
-#         keep_size = int(N*self.ohem_rate)
-#         # Get idx of top losses 
-#         _, ohem_indices = losses.topk(keep_size)
-#         ohem_losses = losses[ohem_indices]
-#         loss = ohem_losses.mean()
-#         return loss
-
-
 class MultiHeadsEval(nn.Module):
 
     def __init__(self, solver_cfg: CfgNode):
