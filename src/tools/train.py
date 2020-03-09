@@ -117,6 +117,7 @@ def train(cfg, debug=False):
     # Build scheduler
 
     sched_cfg = solver_cfg.SCHEDULER
+    scheduler_type = sched_cfg.NAME
     scheduler = build_scheduler(optimizer, sched_cfg, steps_per_epoch=np.int(len(train_loader)), epochs=total_epochs)
 
     # Resume training with correct optimizer and scheduler
@@ -169,8 +170,10 @@ def train(cfg, debug=False):
             optimizer.step()
 
             # tabulate the steps from the evaluation
-            eval_result = {k: eval_result[k].item() for k in eval_result}        
-            scheduler.step()
+            eval_result = {k: eval_result[k].item() for k in eval_result} 
+
+            if scheduler_type == 'OneCyleLR':
+                scheduler.step()       
 
             if idx % 100 == 0:
                 print(idx, eval_result['loss'], eval_result['acc'])
@@ -277,6 +280,10 @@ def train(cfg, debug=False):
 
         print("Epoch {0} Eval, Loss {1}, Acc {2}, Kaggle score {3}".format(epoch, val_total_err, val_total_acc, val_kaggle_score))
         evaluator.clear_cache()
+
+        if scheduler is not None:
+            if scheduler_type == 'ReduceLROnPlateau':
+                scheduler.step(val_total_err)
 
         ######################################
         # Saving the model + performance

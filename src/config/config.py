@@ -68,14 +68,20 @@ __C.MODEL.SOLVER.OPTIMIZER = ConfigurationNode()
 __C.MODEL.SOLVER.OPTIMIZER.NAME = 'adam'
 __C.MODEL.SOLVER.OPTIMIZER.BASE_LR = 0.001
 
+# scheduler config - 2 different types of schedulers are possible - OneCyleLR and ReduceLROnPlateau
 __C.MODEL.SOLVER.SCHEDULER = ConfigurationNode()
 __C.MODEL.SOLVER.SCHEDULER.NAME = 'OneCycleLR'
-__C.MODEL.SOLVER.SCHEDULER.PROG_RESIZE = False
 __C.MODEL.SOLVER.SCHEDULER.TOTAL_EPOCHS = 40
+# OneCycleLR hyperparams
 __C.MODEL.SOLVER.SCHEDULER.PCT_START = 0.5
 __C.MODEL.SOLVER.SCHEDULER.ANNEAL_STRATEGY = 'cos'
 __C.MODEL.SOLVER.SCHEDULER.DIV_FACTOR = 30
 __C.MODEL.SOLVER.SCHEDULER.MAX_LR = 0.01
+# ReduceLROnPlateau hyperparams
+__C.MODEL.SOLVER.SCHEDULER.LR_REDUCE_GAMMA = 0.1
+# This is to fix a bug related to progressive resizing
+__C.MODEL.SOLVER.SCHEDULER.PROG_RESIZE = False
+
 
 #__C.MODEL.SOLVER.LABELS_WEIGHTS_PATH = 'C:/Users/nasty/data-science/kaggle/bengali/data/interim/labels_weights.p'
 __C.MODEL.SOLVER.MIXUP_AUGMENT = True
