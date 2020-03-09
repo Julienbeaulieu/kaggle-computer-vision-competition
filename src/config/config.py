@@ -21,6 +21,8 @@ __C.DATASET.TRAIN_DATA_PATH = 'C:/Users/nasty/data-science/kaggle/bengali/data/i
 __C.DATASET.VAL_DATA_PATH = 'C:/Users/nasty/data-science/kaggle/bengali/data/interim/val_data.p'
 __C.DATASET.TRAIN_DATA_SAMPLE = 'C:/Users/nasty/data-science/kaggle/bengali/data/interim/train_data_sample.p'
 __C.DATASET.VALID_DATA_SAMPLE = 'C:/Users/nasty/data-science/kaggle/bengali/data/interim/train_data_sample.p'
+__C.DATASET.ALL_DATA = 'C:/Users/nasty/data-science/kaggle/bengali/data/interim/all_data.p'
+
 
 # data augmentation parameters with albumentations library
 __C.DATASET.AUGMENTATION = ConfigurationNode()
