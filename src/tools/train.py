@@ -109,8 +109,6 @@ def train(cfg, debug=False):
     if cfg.RESUME_PATH == "":
         current_epoch = 0 # manually change this... refactor
     total_epochs = solver_cfg.SCHEDULER.TOTAL_EPOCHS
-    current_epoch = 0 # manually change this... refactor
-
 
     # Build optimizerW
     opti_cfg = solver_cfg.OPTIMIZER

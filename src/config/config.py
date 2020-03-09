@@ -86,6 +86,8 @@ __C.MODEL.SOLVER.MIXUP.CUTMIX_PROB = 0.0
 
 __C.MODEL.SOLVER.LOSS = ConfigurationNode()
 __C.MODEL.SOLVER.LOSS.NAME = 'xentropy' # other loss is 'label_smoothing_ce'
+__C.MODEL.SOLVER.LOSS.EPS = 0.1
+__C.MODEL.SOLVER.LOSS.REDUCTION = 'mean'
 __C.MODEL.SOLVER.LOSS.OHEM_RATE = 1.0
 
 __C.OUTPUT_PATH = 'C:/Users/nasty/data-science/kaggle/bengali-git/bengali.ai/models'

@@ -1,0 +1,15 @@
+# train on smaller image size
+DATASET:
+  RESIZE_SHAPE: (64, 64)
+  BATCH_SIZE: 128
+MODEL:
+  BACKBONE:
+    NAME: densenet121
+    PRETRAINED_PATH: /home/jupyter/kaggle-computer-vision-competition/models/densenet121.pth
+  HEAD:
+    INPUT_DIM: 1000
+  SOLVER: 
+    LOSS:
+      OHEM_RATE: 0.7
+    SCHEDULER:
+      TOTAL_EPOCHS: 30

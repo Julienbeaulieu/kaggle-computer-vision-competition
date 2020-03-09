@@ -12,9 +12,10 @@ class LabelSmoothingCrossEntropy(torch.nn.Module):
 
     """
     y_int = True
-    def __init__(self, eps:float=0.1, reduction='mean'): 
+    def __init__(self, loss_cfg:CfgNode, eps: float, reduction): 
         super(LabelSmoothingCrossEntropy, self).__init__()
-        self.eps,self.reduction = eps,reduction
+        self.eps = loss_cfg.EPS
+        self.reduction = loss_cfg.REDUCTION
 
     def forward(self, output, target, weights):
         c = output.size()[-1]
@@ -32,18 +33,17 @@ class SoftmaxCE(torch.nn.Module):
     Normal softmax cross entropy with added functionality
     """
 
-    def __init__(self, loss_cfg: CfgNode, do_mixup: bool, weights: List, eps:float=0.1, reduction='mean', **kwargs):
+    def __init__(self, loss_cfg: CfgNode, do_mixup: bool, weights: List, eps: float, reduction, **kwargs):
         """
         :param weights: class weights
         """
-        super(SoftmaxCE, self).__init__()
-
+        super(SoftmaxCE, self).__init__()q
         self.ohem_rate = loss_cfg.OHEM_RATE
         self.do_mixup = do_mixup
-        self.eps = eps
-        self.reduction = reduction
+        self.eps = loss_cfg.EPS
+        self.reduction = loss_cfg.REDUCTION
         self.weights = weights
-        self.loss_fn = LabelSmoothingCrossEntropy(eps, reduction)
+        self.loss_fn = LabelSmoothingCrossEntropy(self.eps, self.reduction)
 
     def forward(self, logits, labels):
         loss = 0

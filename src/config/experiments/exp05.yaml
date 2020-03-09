@@ -1,0 +1,10 @@
+DATASET:
+  AUGMENTATION:
+    BLUR_LIMIT: 3 
+MODEL:
+  SOLVER: 
+    LOSS:
+      OHEM_RATE: 0.5
+    SCHEDULER:
+      TOTAL_EPOCHS: 30
+RESUME_PATH: C:\Users\nasty\data-science\kaggle\bengali-git\bengali.ai\experiments\exp05\model_2020-03-02T13_54_55.384558.pt
