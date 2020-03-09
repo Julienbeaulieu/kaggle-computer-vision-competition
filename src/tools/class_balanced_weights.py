@@ -9,9 +9,9 @@ import pickle
 
 def get_num_per_class(labels):
     """
-    helper function to get number of entries per class (sorted by class index)
+    helper function to get number of entries per class (sorted by class input_index)
     :param labels: list of labels
-    :return: array of counts sorted based on the class index
+    :return: array of counts sorted based on the class input_index
     """
 
     counts = Counter(labels)

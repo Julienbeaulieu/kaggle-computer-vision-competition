@@ -29,7 +29,7 @@ def get_labels(input_p_data):
 
 def filter_label_df_index(df_input, index_root, index_vowel, index_consonant) -> List[int]:
     """
-    Based on the inputted combo of the root, vowel, consonant, return a list of index within the df_input that has matching characteristics
+    Based on the inputted combo of the root, vowel, consonant, return a list of input_index within the df_input that has matching characteristics
     :param df_input:
     :param index_root:
     :param index_vowel:

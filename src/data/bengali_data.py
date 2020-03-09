@@ -5,32 +5,99 @@ from yacs.config import CfgNode
 from torch.utils.data import Dataset, DataLoader
 from .preprocessing import Preprocessor
 from typing import List
-
+import pandas as pd
+from pathlib import Path
 
 class BengaliDataset(Dataset):
     """
     Torch data set object for the bengali data
     """
 
-    def __init__(self, data_list: List, data_cfg: CfgNode, is_training: bool):
+    def __init__(self, list_data: List, data_cfg: CfgNode, is_training: bool):
         """
-        :param data_list: list of raw data consists of (image, labels)
+        :param list_data: list of raw data consists of (image, labels)
         :param data_cfg:  data config node
         :param is_training:
         """
-        self.data_list = data_list
-        self.data_size = len(data_list)
+        self.list_image_data = list_data
+        self.size_data = len(list_data)
+
         self.is_training = is_training
+
+        # instantiate the preprocessor for the dataset, per the configuration node past to it.
         self.preprocessor = Preprocessor(data_cfg)
 
     def __len__(self) -> int:
-        return self.data_size
+        """
+        Return the length of the dataset
+        :return:
+        """
+        return self.size_data
 
-    def __getitem__(self, idx: int) -> (np.ndarray, np.ndarray):
-        img, labels = self.data_list[idx]
+    def __getitem__(self, index: int) -> (np.ndarray, np.ndarray):
+        """
+        Get individual item from the dataset at a particular input_index.
+        :param index:
+        :return:
+        """
+        # Retrieve both the image data as well as the labesl from the data list.
+        img, labels = self.list_image_data[index]
         x = self.preprocessor(img, self.is_training)
         return x, labels
 
+
+class BengaliPredictionDataset(BengaliDataset):
+    """
+    Torch data set object for the bengali data PREDICTION purposes only, hence much smaller and is by default assumed not to be in training
+    This is a bit different from the regular dataset as the img/labels are separated.
+    """
+
+    def __init__(self, list_image_data: List, data_cfg: CfgNode, fname: Path, indices=None):
+        """
+        :param list_image_data: list of raw data consists of (image, labels)
+        :param data_cfg: data config node
+        :param is_training: always false in the prediction dataset.
+        """
+        super().__init__(list_image_data, data_cfg, is_training=False)
+        self.list_image_data = list_image_data
+        self.size_data = len(list_image_data)
+
+        # Record the indices
+        self.indices = indices
+
+        # Read the data frame. This will be used during get-item phase.
+        self.df = pd.read_parquet(fname)
+
+        self.is_training = False
+
+        # instantiate the preprocessor for the dataset, per the configuration node past to it.
+        self.preprocessor = Preprocessor(data_cfg)
+
+    def __len__(self) -> int:
+        """
+        Instead of Returning the length of the dataset, now it returns the length of hte indices
+        :return:
+        """
+        return len(self.indices)
+
+    def __getitem__(self, input_index: int) -> (np.ndarray, np.ndarray):
+        """
+        Get individual item from the dataset at a particular index.
+        :param input_index:
+        :return:
+        """
+        # Retrieve the input_index among indices:
+        index = self.indices[input_index]
+
+        # Retrieve both the image data as well as the labesl from the data list.
+        img = self.list_image_data[index]
+
+        # Preprocess the image through the pre
+        augmented_image = self.preprocessor(img, self.is_training)
+
+        # Get the name from the spreadsheet:
+        name = self.df.iloc[input_index, 0]
+        return augmented_image, name
 
 class BengaliDataBatchCollator(object):
     """

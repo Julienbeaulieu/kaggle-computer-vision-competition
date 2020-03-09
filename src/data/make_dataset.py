@@ -36,12 +36,16 @@ def train2image(vector_image: pd.DataFrame):
 
 
 
-def load_images(train_test):
+def load_images(train_test, indices=None):
     """
     Utility function to Load the images from both the location and return them
     :param train_test:
     :return:
     """
+
+    # Handle default values.
+    if indices is None:
+        indices = ['0', '1', '2', '3']
 
     # ???
     path_form = {
@@ -52,7 +56,7 @@ def load_images(train_test):
     imgs_list = []
 
     # sequentially load all four files.
-    for id in ['0', '1', '2', '3']:
+    for id in indices:
 
         # Form the path of the files.
         path = PATH_DATA_RAW / path_form.replace('ID', id)

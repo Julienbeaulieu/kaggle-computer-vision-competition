@@ -12,15 +12,15 @@ from cv2 import resize
 
 def content_crop(img: ndarray, pad_to_square: bool, white_background: bool):
     """
-
+    Center the content, removed
     https://www.kaggle.com/iafoss/image-preprocessing-128x128
 
     :param img: grapheme image matrix
-    :param pad_to_square:  whether pad to square (preserving aspect ratio)
+    :param pad_to_square: whether pad to square (preserving aspect ratio)
     :param white_background: whether the image
     :return: cropped image matrix
     """
-    # remove the surrounding 5 pixels
+    # Remove the surrounding 5 pixels
     img = img[5:-5, 5:-5]
     if white_background:
         y_list, x_list = np.where(img < 235)
@@ -31,10 +31,13 @@ def content_crop(img: ndarray, pad_to_square: bool, white_background: bool):
     xmin, xmax = np.min(x_list), np.max(x_list)
     ymin, ymax = np.min(y_list), np.max(y_list)
 
+    # Manually set the baseline low and high for x&y
     xmin = xmin - 13 if (xmin > 13) else 0
     ymin = ymin - 10 if (ymin > 10) else 0
     xmax = xmax + 13 if (xmax < 223) else 236
     ymax = ymax + 10 if (ymax < 127) else 137
+
+    # Reposition the images
     img = img[ymin:ymax, xmin:xmax]
 
     # remove lo intensity pixels as noise
@@ -46,11 +49,13 @@ def content_crop(img: ndarray, pad_to_square: bool, white_background: bool):
     if pad_to_square:
         lx, ly = xmax - xmin, ymax - ymin
         l = max(lx, ly) + 16
+
         # make sure that the aspect ratio is kept in rescaling
         if white_background:
             constant_pad = 255
         else:
             constant_pad = 0
+
         img = np.pad(img, [((l - ly) // 2,), ((l - lx) // 2,)], mode='constant', constant_values=constant_pad)
 
     return img
@@ -63,21 +68,34 @@ class Preprocessor(object):
 
     def __init__(self, dataset_cfg: CfgNode):
         """
-
+        Constructor of the Preprocessing from the Configuration Node properties.
         :param dataset_cfg: dataset config
         """
+        # Augmentation node is the
         aug_cfg = dataset_cfg.AUGMENTATION
+
+
+        # !!!Training ONLY!!!
+        # Color augmentation settings,
         self.color_aug = self.generate_color_augmentation(aug_cfg)
+        # Shape augmentation settings
         self.shape_aug = self.generate_shape_augmentation(aug_cfg)
-        self.resize_shape = dataset_cfg.RESIZE_SHAPE
-        self.crop = dataset_cfg.CONCENTRATE_CROP
         self.pad = dataset_cfg.PAD_TO_SQUARE
         self.white_background = dataset_cfg.WHITE_BACKGROUND
+        self.do_augmix = dataset_cfg.DO_AUGMIX
+
+        # !!!~~~BOTH~~~!!!
+        # Color augmentation settings,
+        self.resize_shape = dataset_cfg.RESIZE_SHAPE
+        # Crop augmentation settings,
+        self.crop = dataset_cfg.CONCENTRATE_CROP
+        # Convert to RGB
         self.to_rgb = dataset_cfg.TO_RGB
+        # Normalize Mean or STD?
         self.normalize_mean = dataset_cfg.get('NORMALIZE_MEAN')
         self.normalize_std = dataset_cfg.get('NORMALIZE_STD')
 
-        self.do_augmix = dataset_cfg.DO_AUGMIX
+
         if self.do_augmix:
             augmentations.IMAGE_SIZE = dataset_cfg.RESIZE_SHAPE[0]
 
@@ -137,7 +155,7 @@ class Preprocessor(object):
 
     def __call__(self, img: ndarray, is_training: bool, normalize: bool = True) -> Union[ndarray, Tuple]:
         """
-        make the transformation
+        Conduct the transformation
         :param img: input img array
         :param is_training: whether it's training (to do augmentation)
         :return : transformed data
@@ -147,11 +165,14 @@ class Preprocessor(object):
         # if not white background, reverse
         if not self.white_background:
             x = 255 - x
+
         # crop
         if self.crop:
             x = content_crop(x, self.pad, self.white_background)
+
         # resize
         x = resize(x, self.resize_shape)
+
         # to RGB
         if self.to_rgb:
             x = np.repeat(np.expand_dims(x, axis=-1), 3, axis=-1)
@@ -177,6 +198,11 @@ class Preprocessor(object):
         return x
 
     def normalize_img(self, x: ndarray) -> ndarray:
+        """
+        Normalize image to a specific mean/std if they are specifiied, otherwise, default to /255
+        :param x:
+        :return:
+        """
         # normalize to 0-1
         x = x / 255.
         if self.normalize_mean is not None:

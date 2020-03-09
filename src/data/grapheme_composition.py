@@ -29,7 +29,7 @@ def encode_grapheme(index_root: int, index_vowel: int, index_consonant: int):
 def get_components(input_list: List[int]) -> List[str]:
     """
     Based on the input list of three components, return
-    :param input_list: must have three integer parts for root, vowel and cosonant diacritic index
+    :param input_list: must have three integer parts for root, vowel and cosonant diacritic input_index
     :return:
     """
     from src.data.load_datasets import load_grapheme_classes

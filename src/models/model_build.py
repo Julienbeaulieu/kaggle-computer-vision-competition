@@ -13,7 +13,7 @@ from src.modeling.backbone.build import build_backbone, BACKBONE_REGISTRY
 from src.modeling.meta_arch.baseline import build_baseline_model
 from yacs.config import CfgNode as ConfigurationNode
 
-class BuildMixin:
+class BuildingMixin:
 
     def build(self,
               config: ConfigurationNode = None,

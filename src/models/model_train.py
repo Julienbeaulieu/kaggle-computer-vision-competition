@@ -221,7 +221,7 @@ class TrainingMixin:
                 eval_result = {k: eval_result[k].item() for k in eval_result}
                 total_err += eval_result['loss']
                 total_acc += eval_result['acc']
-                # print(total_err / (1 + idx), total_acc / (1 + idx))
+                # print(total_err / (1 + input_index), total_acc / (1 + input_index))
         val_result = evaluator.evalulate_on_cache()
         val_total_err = val_result['loss']
         writer_tensorboard.add_scalar('Loss/Val', val_total_err, global_step=epoch)
