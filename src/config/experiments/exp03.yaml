@@ -1,0 +1,9 @@
+ 
+# with mixup but no cutmix
+DATASET:
+  AUGMENTATION:
+    BLUR_LIMIT: 3 
+MODEL:
+  SOLVER: 
+    SCHEDULER:
+      TOTAL_EPOCHS: 2

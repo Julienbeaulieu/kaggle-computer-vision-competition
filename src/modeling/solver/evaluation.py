@@ -24,9 +24,9 @@ class MultiHeadsEval(nn.Module):
             vowel_weights = None
             consonant_weights = None
 
-        self.grapheme_loss_fn = build_loss(loss_cfg, do_mixup=do_mixup, weights=grapheme_weights, num_classes=168)
-        self.vowel_loss_fn = build_loss(loss_cfg, do_mixup=do_mixup, weights=vowel_weights, num_classes=11)
-        self.consonant_loss_fn = build_loss(loss_cfg, do_mixup=do_mixup, weights=consonant_weights, num_classes=7)
+        self.grapheme_loss_fn = build_loss(loss_cfg, do_mixup=do_mixup, weights=grapheme_weights, eps=loss_cfg.EPS, reduction=loss_cfg.REDUCTION, num_classes=168)
+        self.vowel_loss_fn = build_loss(loss_cfg, do_mixup=do_mixup, weights=vowel_weights, eps=loss_cfg.EPS, reduction=loss_cfg.REDUCTION, num_classes=11)
+        self.consonant_loss_fn = build_loss(loss_cfg, do_mixup=do_mixup, weights=consonant_weights, eps=loss_cfg.EPS, reduction=loss_cfg.REDUCTION, num_classes=7)
         self.do_mixup = do_mixup
         
         self.grapheme_logits_cache = []
