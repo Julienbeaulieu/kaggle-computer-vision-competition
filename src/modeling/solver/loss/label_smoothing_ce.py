@@ -9,7 +9,7 @@ from .build import LOSS_REGISTRY
 class LabelSmoothingCrossEntropy(torch.nn.Module):
     """
     Code copied from fastai2
-    
+
     """
     y_int = True
     def __init__(self, eps:float=0.1, reduction='mean'): 

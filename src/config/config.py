@@ -47,8 +47,10 @@ __C.MODEL.META_ARCHITECTURE = 'baseline'
 __C.MODEL.NORMALIZATION_FN = 'BN'
 
 __C.MODEL.BACKBONE = ConfigurationNode()
-__C.MODEL.BACKBONE.NAME = 'mobilenet_v2'
+__C.MODEL.BACKBONE.NAME = 'mobilenet_v2' # 
+__C.MODEL.BACKBONE.RGB = True
 __C.MODEL.BACKBONE.PRETRAINED_PATH = 'C:/Users/nasty/data-science/kaggle/bengali-git/bengali.ai/models/mobilenet_v2-b0353104.pth'
+
 
 __C.MODEL.HEAD = ConfigurationNode()
 __C.MODEL.HEAD.NAME = 'simple_head'
@@ -83,8 +85,7 @@ __C.MODEL.SOLVER.MIXUP.MIXUP_ALPHA = 0.4
 __C.MODEL.SOLVER.MIXUP.CUTMIX_PROB = 0.0
 
 __C.MODEL.SOLVER.LOSS = ConfigurationNode()
-#__C.MODEL.SOLVER.LOSS.NAME = 'xentropy'
-__C.MODEL.SOLVER.LOSS.NAME = 'label_smoothing_ce'
+__C.MODEL.SOLVER.LOSS.NAME = 'xentropy' # other loss is 'label_smoothing_ce'
 __C.MODEL.SOLVER.LOSS.OHEM_RATE = 1.0
 
 __C.OUTPUT_PATH = 'C:/Users/nasty/data-science/kaggle/bengali-git/bengali.ai/models'
