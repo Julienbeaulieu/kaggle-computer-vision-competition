@@ -1,0 +1,17 @@
+DATASET:
+    BATCH_SIZE: 256
+MODEL: 
+  BACKBONE:
+    NAME: se_resnext50
+    PRETRAINED_PATH: /home/jupyter/kaggle-computer-vision-competition/models/se_resnet50-ce0d4300.pth
+  HEAD:
+    INPUT_DIM: 2048
+  SOLVER: 
+    LOSS:
+      NAME: label_smoothing_ce
+      EPS: 0.2
+    SCHEDULER:
+      TOTAL_EPOCHS: 30
+      NAME: ReduceLROnPlateau
+
+

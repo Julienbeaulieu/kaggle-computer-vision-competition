@@ -17,10 +17,10 @@ __C.DATASET.VOWEL_SIZE = 11
 __C.DATASET.CONSONANT_SIZE = 7
 
 # training and validation set paths
-__C.DATASET.TRAIN_DATA_PATH = 'C:/Users/nasty/data-science/kaggle/bengali/data/interim/train_data.p'
-__C.DATASET.VAL_DATA_PATH = 'C:/Users/nasty/data-science/kaggle/bengali/data/interim/val_data.p'
-__C.DATASET.TRAIN_DATA_SAMPLE = 'C:/Users/nasty/data-science/kaggle/bengali/data/interim/train_data_sample.p'
-__C.DATASET.VALID_DATA_SAMPLE = 'C:/Users/nasty/data-science/kaggle/bengali/data/interim/train_data_sample.p'
+__C.DATASET.TRAIN_DATA_PATH = '/home/jupyter/kaggle-computer-vision-competition/data/interim/train_data.p'
+__C.DATASET.VAL_DATA_PATH = '/home/jupyter/kaggle-computer-vision-competition/data/interim/val_data.p'
+__C.DATASET.TRAIN_DATA_SAMPLE = '/home/jupyter/kaggle-computer-vision-competition/data/interim/train_data_sample.p'
+__C.DATASET.VALID_DATA_SAMPLE = '/home/jupyter/kaggle-computer-vision-competition/data/interim/train_data_sample.p'
 
 # data augmentation parameters with albumentations library
 __C.DATASET.AUGMENTATION = ConfigurationNode()
@@ -49,7 +49,7 @@ __C.MODEL.NORMALIZATION_FN = 'BN'
 __C.MODEL.BACKBONE = ConfigurationNode()
 __C.MODEL.BACKBONE.NAME = 'mobilenet_v2' # 
 __C.MODEL.BACKBONE.RGB = True
-__C.MODEL.BACKBONE.PRETRAINED_PATH = 'C:/Users/nasty/data-science/kaggle/bengali-git/bengali.ai/models/mobilenet_v2-b0353104.pth'
+__C.MODEL.BACKBONE.PRETRAINED_PATH = '/home/jupyter/kaggle-computer-vision-competition/models/mobilenet_v2-b0353104.pth'
 
 
 __C.MODEL.HEAD = ConfigurationNode()
@@ -62,7 +62,7 @@ __C.MODEL.HEAD.BN = True
 __C.MODEL.HEAD.DROPOUT = -1
 
 __C.MODEL.SOLVER = ConfigurationNode()
-__C.MODEL.SOLVER.LABELS_WEIGHTS_PATH = 'C:/Users/nasty/data-science/kaggle/bengali/data/interim/labels_weights.p'
+__C.MODEL.SOLVER.LABELS_WEIGHTS_PATH = '/home/jupyter/kaggle-computer-vision-competition/data/interim/labels_weights.p'
 
 __C.MODEL.SOLVER.OPTIMIZER = ConfigurationNode()
 __C.MODEL.SOLVER.OPTIMIZER.NAME = 'adam'
@@ -88,7 +88,7 @@ __C.MODEL.SOLVER.LOSS = ConfigurationNode()
 __C.MODEL.SOLVER.LOSS.NAME = 'xentropy' # other loss is 'label_smoothing_ce'
 __C.MODEL.SOLVER.LOSS.OHEM_RATE = 1.0
 
-__C.OUTPUT_PATH = 'C:/Users/nasty/data-science/kaggle/bengali-git/bengali.ai/models'
+__C.OUTPUT_PATH = '/home/jupyter/kaggle-computer-vision-competition/models'
 __C.RESUME_PATH = ''
 
 def get_cfg_defaults():

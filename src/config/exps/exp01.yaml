@@ -1,0 +1,13 @@
+DATASET:
+  RESIZE_SHAPE: (64, 64)
+MODEL: 
+  BACKBONE:
+    NAME: se_resnext50
+    PRETRAINED_PATH: /home/jupyter/kaggle-computer-vision-competition/models/se_resnext50_32x4d-a260b3a4.pth
+  HEAD:
+    INPUT_DIM: 2048
+  SOLVER: 
+    LOSS:
+      NAME: label_smoothing_ce
+    SCHEDULER:
+      TOTAL_EPOCHS: 20
