@@ -118,7 +118,7 @@ class MultiHeadsEval(nn.Module):
 def mixup_labels_helper(labels: tuple):
     grapheme_labels, shuffled_grapheme_labels, vowel_labels, shuffled_vowel_labels, \
     consonant_labels, shuffled_consonant_labels, lam = labels
-    labels = torch.stack([grapheme_labels, vowel_labels, consonant_labels]).T
+    labels = torch.stack([grapheme_labels, vowel_labels, consonant_labels]).transpose(0, 1)
 
     grapheme_labels = (grapheme_labels, shuffled_grapheme_labels, lam)
     vowel_labels = (vowel_labels, shuffled_vowel_labels, lam)

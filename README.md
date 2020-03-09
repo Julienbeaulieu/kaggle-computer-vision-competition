@@ -59,7 +59,8 @@ Project Organization
         │   └── solver       <- Scripts for building loss function, evaluation and optimizer
         │       ├── loss
         │       │   ├── build.py
-        │       │   └── softmax_cross_entropy.py
+        │       │   ├── softmax_cross_entropy.py
+        │       │   └── label_smoothing_ce.py
         │       ├── evaluation.py
         │       └── optimizer.py 
         │ 

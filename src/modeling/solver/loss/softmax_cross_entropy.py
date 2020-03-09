@@ -31,7 +31,6 @@ class SoftmaxCE(torch.nn.Module):
         else:
             losses = self.loss_fn(logits, labels)
             corrects = (labels == preds)
-
         if self.ohem_rate < 1:
             loss += self.compute_ohem_loss(losses)
         else:
