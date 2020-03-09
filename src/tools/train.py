@@ -340,4 +340,4 @@ if __name__ == '__main__':
     if cfg_path is not None:
         cfg.merge_from_file(cfg_path)
     cfg.OUTPUT_PATH = output_path
-    train(cfg, debug=True)
+    train(cfg)

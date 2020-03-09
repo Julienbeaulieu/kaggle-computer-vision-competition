@@ -37,13 +37,13 @@ class SoftmaxCE(torch.nn.Module):
         """
         :param weights: class weights
         """
-        super(SoftmaxCE, self).__init__()q
+        super(SoftmaxCE, self).__init__()
         self.ohem_rate = loss_cfg.OHEM_RATE
         self.do_mixup = do_mixup
         self.eps = loss_cfg.EPS
         self.reduction = loss_cfg.REDUCTION
         self.weights = weights
-        self.loss_fn = LabelSmoothingCrossEntropy(self.eps, self.reduction)
+        self.loss_fn = LabelSmoothingCrossEntropy(loss_cfg, self.eps, self.reduction)
 
     def forward(self, logits, labels):
         loss = 0
