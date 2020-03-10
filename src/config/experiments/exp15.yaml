@@ -15,7 +15,5 @@ MODEL:
     SCHEDULER:
       TOTAL_EPOCHS: 30
       NAME: ReduceLROnPlateau
-RESUME_PATH: C:\Users\nasty\data-science\kaggle\bengali-git\bengali.ai\experiments\exp12\model_backups\model_bak_000006.pt
-
 
 

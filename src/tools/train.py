@@ -172,7 +172,7 @@ def train(cfg, debug=False):
             # tabulate the steps from the evaluation
             eval_result = {k: eval_result[k].item() for k in eval_result} 
 
-            if scheduler_type == 'OneCyleLR':
+            if scheduler_type == 'OneCycleLR':
                 scheduler.step()       
 
             if idx % 100 == 0:
