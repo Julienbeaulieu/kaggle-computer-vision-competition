@@ -95,3 +95,7 @@ configs/eai_server_paths.yaml
 # inbox folder for experiment runs should stay local
 configs/inbox
 
+
+configs/Archive/
+
+models/mobilenet_v2-b0353104.pth

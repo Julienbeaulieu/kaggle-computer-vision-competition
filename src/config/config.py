@@ -121,7 +121,10 @@ def combine_cfgs(path_cfg_data: Path=None, path_cfg_override: Path=None):
     :param path_cfg_override: path to path_cfg_override actual
     :return: cfg_base incorporating the overwrite.
     """
-
+    if path_cfg_data is not None:
+        path_cfg_data=Path(path_cfg_data)
+    if path_cfg_override is not None:
+        path_cfg_override=Path(path_cfg_override)
     # Path order of precedence is:
     # Priority 1, 2, 3, 4 respectively
     # .env > other CFG YAML > data.yaml > default.yaml

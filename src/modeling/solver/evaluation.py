@@ -6,8 +6,8 @@ from collections import Counter
 from yacs.config import CfgNode
 from typing import List, Dict, Union
 from sklearn.metrics import classification_report
-from .loss import WeightedFocalLoss, SoftMaxCE
-
+#from .loss import WeightedFocalLoss, SoftMaxCE
+from .loss import build_loss
 
 class MultiHeadsEvaluation(nn.Module):
     def __init__(self, solver_cfg: CfgNode):
