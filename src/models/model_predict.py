@@ -53,7 +53,7 @@ class PredictionMixin:
             path_file = Path(DataDir) / name_file
 
             # Construct the DataSet from the images and file name.
-            test_dataset = BengaliPredictionDataset(test_images, self.config, fname=path_file.absolute())
+            test_dataset = BengaliPredictionDataset(test_images, self.config.DATASET, fname=path_file.absolute())
 
             test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False, num_workers=1)
 

@@ -13,10 +13,10 @@ class BengaliDataset(Dataset):
     Torch data set object for the bengali data
     """
 
-    def __init__(self, list_data: List, data_cfg: CfgNode, is_training: bool):
+    def __init__(self, list_data: List, node_cfg_dataset: CfgNode, is_training: bool):
         """
         :param list_data: list of raw data consists of (image, labels)
-        :param data_cfg:  data config node
+        :param node_cfg_dataset: the DATASET node of the config
         :param is_training:
         """
         self.list_image_data = list_data
@@ -25,7 +25,7 @@ class BengaliDataset(Dataset):
         self.is_training = is_training
 
         # instantiate the preprocessor for the dataset, per the configuration node past to it.
-        self.preprocessor = Preprocessor(data_cfg)
+        self.preprocessor = Preprocessor(node_cfg_dataset)
 
     def __len__(self) -> int:
         """
@@ -52,13 +52,13 @@ class BengaliPredictionDataset(BengaliDataset):
     This is a bit different from the regular dataset as the img/labels are separated.
     """
 
-    def __init__(self, list_image_data: List, data_cfg: CfgNode, fname: Path, indices=None):
+    def __init__(self, list_image_data: List, node_cfg_data: CfgNode, fname: Path, indices=None):
         """
         :param list_image_data: list of raw data consists of (image, labels)
-        :param data_cfg: data config node
+        :param node_cfg_data: data config node
         :param is_training: always false in the prediction dataset.
         """
-        super().__init__(list_image_data, data_cfg, is_training=False)
+        super().__init__(list_image_data, node_cfg_data, is_training=False)
         self.list_image_data = list_image_data
         self.size_data = len(list_image_data)
 
@@ -71,7 +71,7 @@ class BengaliPredictionDataset(BengaliDataset):
         self.is_training = False
 
         # instantiate the preprocessor for the dataset, per the configuration node past to it.
-        self.preprocessor = Preprocessor(data_cfg)
+        self.preprocessor = Preprocessor(node_cfg_data)
 
     def __len__(self) -> int:
         """

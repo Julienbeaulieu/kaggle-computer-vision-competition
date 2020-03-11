@@ -27,7 +27,7 @@ class RestorationMixin:
 
         if self.model is None:
             # Build model.
-            self.model: torch.nn.Module = build_baseline_model(config)
+            self.model: torch.nn.Module = build_baseline_model(config.MODEL)
 
         # Load weight dictionary
         state_dict = torch.load(path_weight, map_location='cpu')

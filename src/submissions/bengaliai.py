@@ -8,7 +8,7 @@ from dotenv import find_dotenv, load_dotenv
 path_CFG = os.getenv("path_cfg")
 path_model_weight = os.getenv("path_weight")
 
-class kaggle_project_submission(BuildingMixin, TrainingMixin, RestorationMixin, PredictionMixin):
+class kaggle_project_submission(RestorationMixin, PredictionMixin):
 
     def __init__(self, input_path_CFG=path_CFG, input_path_model_weight=path_model_weight):
         """
@@ -28,7 +28,7 @@ class kaggle_project_submission(BuildingMixin, TrainingMixin, RestorationMixin, 
         if path_model_weight is None:
             return
         # Instantiate model, using the model weight specified, while using default self.config.
-        self.model = self.restore(path_weight=input_path_model_weight)
+        self.restore(config=self.config, path_weight=input_path_model_weight)
 
         # Train the model.
         # self.train()

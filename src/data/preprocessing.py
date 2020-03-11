@@ -59,13 +59,13 @@ class Preprocessor(object):
     bengali data preprocessor
     """
 
-    def __init__(self, dataset_cfg: CfgNode):
+    def __init__(self, node_cfg_dataset: CfgNode):
         """
         Constructor of the Preprocessing from the Configuration Node properties.
-        :param dataset_cfg: dataset config
+        :param node_cfg_dataset: dataset config
         """
         # Augmentation node is the
-        aug_cfg = dataset_cfg.AUGMENTATION
+        aug_cfg = node_cfg_dataset.AUGMENTATION
 
 
         # !!!Training ONLY!!!
@@ -73,24 +73,24 @@ class Preprocessor(object):
         self.color_aug = self.generate_color_augmentation(aug_cfg)
         # Shape augmentation settings
         self.shape_aug = self.generate_shape_augmentation(aug_cfg)
-        self.pad = dataset_cfg.PAD_TO_SQUARE
-        self.white_background = dataset_cfg.WHITE_BACKGROUND
-        self.do_augmix = dataset_cfg.DO_AUGMIX
+        self.pad = node_cfg_dataset.PAD_TO_SQUARE
+        self.white_background = node_cfg_dataset.WHITE_BACKGROUND
+        self.do_augmix = node_cfg_dataset.DO_AUGMIX
 
         # !!!~~~BOTH~~~!!!
         # Color augmentation settings,
-        self.resize_shape = dataset_cfg.RESIZE_SHAPE
+        self.resize_shape = node_cfg_dataset.RESIZE_SHAPE
         # Crop augmentation settings,
-        self.crop = dataset_cfg.CONCENTRATE_CROP
+        self.crop = node_cfg_dataset.CONCENTRATE_CROP
         # Convert to RGB
-        self.to_rgb = dataset_cfg.TO_RGB
+        self.to_rgb = node_cfg_dataset.TO_RGB
         # Normalize Mean or STD?
-        self.normalize_mean = dataset_cfg.get('NORMALIZE_MEAN')
-        self.normalize_std = dataset_cfg.get('NORMALIZE_STD')
+        self.normalize_mean = node_cfg_dataset.get('NORMALIZE_MEAN')
+        self.normalize_std = node_cfg_dataset.get('NORMALIZE_STD')
 
 
         if self.do_augmix:
-            augmentations.IMAGE_SIZE = dataset_cfg.RESIZE_SHAPE[0]
+            augmentations.IMAGE_SIZE = node_cfg_dataset.RESIZE_SHAPE[0]
 
         if not self.to_rgb:
             self.normalize_mean = np.mean(self.normalize_mean)
