@@ -3,6 +3,9 @@ DATASET:
   NAME: bengali_kaggle
   TRAIN_DATA_PATH: C:/Users/mingy/Documents/ml_data/bengali/train_data.p
   VAL_DATA_PATH: C:/Users/mingy/Documents/ml_data/bengali/val_data.p
+  USE_FOLDS_DATA: False
+  VALIDATION_FOLD: 4
+  FOLDS_PATH: ""
   DEFAULT_SIZE:
   - 137
   - 236
@@ -21,6 +24,7 @@ DATASET:
     ROTATION_DEGREE: 20
     ROTATION_PROB: 1
     GRID_MASK_PROB: 0.0
+    HORIZONTAL_FLIP_PROB: 0.0
   BATCH_SIZE: 32
   CPU_NUM: 1
   NORMALIZE_MEAN:
@@ -43,6 +47,7 @@ MODEL:
     NAME: mobilenet_v2
     PRETRAINED_PATH: C:\Users\mingy\Documents\ml_data\torchvision_models\mobilenet_v2-b0353104.pth
     RGB: true
+    LOAD_FIRST_BLOCK: true
   HEAD:
     NAME: simple_head
     ACTIVATION: leaky_relu

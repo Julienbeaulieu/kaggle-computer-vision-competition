@@ -31,8 +31,6 @@ def train(cfg: CfgNode):
     # FILES, PATHS
     assert cfg.OUTPUT_PATH != ''
     output_path = cfg.OUTPUT_PATH
-    train_path = cfg.DATASET.TRAIN_DATA_PATH
-    val_path = cfg.DATASET.VAL_DATA_PATH
 
     if not os.path.exists(output_path):
         os.mkdir(output_path)
@@ -51,8 +49,22 @@ def train(cfg: CfgNode):
     perf_trace = []
 
     # DATA LOADER
-    train_data = pickle.load(open(train_path, 'rb'))
-    val_data = pickle.load(open(val_path, 'rb'))
+    if cfg.DATASET.USE_FOLDS_DATA:
+        data_path = cfg.DATASET.FOLDS_PATH
+        all_data_folds = pickle.load(open(data_path, 'rb'))
+        val_fold = cfg.DATASET.VALIDATION_FOLD
+        train_data = []
+        val_data = []
+        for idx, entries in enumerate(all_data_folds):
+            if idx == val_fold:
+                val_data = entries
+            else:
+                train_data = train_data + entries
+    else:
+        train_path = cfg.DATASET.TRAIN_DATA_PATH
+        val_path = cfg.DATASET.VAL_DATA_PATH
+        train_data = pickle.load(open(train_path, 'rb'))
+        val_data = pickle.load(open(val_path, 'rb'))
 
     # witchcraft: only train on few classes
     focus_cls = cfg.DATASET.FOCUS_CLASS
@@ -88,9 +100,6 @@ def train(cfg: CfgNode):
     # optimizer, scheduler, amp
     opti_cfg = solver_cfg.OPTIMIZER
     optimizer = build_optimizer(model, opti_cfg)
-    scheduler_cfg = solver_cfg.SCHEDULER
-    scheduler_type = scheduler_cfg.NAME
-    scheduler = build_scheduler(optimizer, scheduler_cfg)
     use_amp = solver_cfg.AMP
     if use_amp:
         opt_level = 'O1'
@@ -99,10 +108,12 @@ def train(cfg: CfgNode):
     if cfg.RESUME_PATH != "":
         if 'optimizer_state' in checkpoint:
             optimizer.load_state_dict(checkpoint['optimizer_state'])
-        if 'scheduler_state' in checkpoint and scheduler is not None:
-            scheduler.load_state_dict(checkpoint['scheduler_state'])
         if use_amp and 'amp_state' in checkpoint:
             amp.load_state_dict(checkpoint['amp_state'])
+
+    scheduler_cfg = solver_cfg.SCHEDULER
+    scheduler_type = scheduler_cfg.NAME
+    scheduler = build_scheduler(optimizer, scheduler_cfg)
 
     # evaluator
     mixup_training = solver_cfg.MIXUP_AUGMENT
@@ -230,6 +241,11 @@ def train(cfg: CfgNode):
             'val_result': val_result
         }
         pickle.dump(epoch_result, open(os.path.join(results_dir, 'result_epoch_{0}.p'.format(epoch)), 'wb'))
+
+        # output_path_base = os.path.basename(output_path)
+        # os.system('aws s3 sync /root/bengali_data/{0} s3://eaitest1/{1}'.format(output_path_base, output_path_base))
+        # os.system('rm -r /root/bengali_data/{0}/model_backups'.format(output_path_base))
+        # os.system('mkdir /root/bengali_data/{0}/model_backups'.format(output_path_base))
 
 
 if __name__ == '__main__':
