@@ -8,7 +8,7 @@ from typing import Union, List, Tuple
 from .augmix import augmentations, augment_and_mix
 
 from cv2 import resize
-
+import torch
 
 def content_crop(img: ndarray, white_background: bool):
     """
@@ -190,7 +190,12 @@ class Preprocessor(object):
             return x
 
         x = self.normalize_img(x)
-        return x
+
+        # Resume the permutation
+        img = torch.tensor(x)
+        img = img.permute([2, 0, 1])
+
+        return img
 
     def normalize_img(self, x: ndarray) -> ndarray:
         """

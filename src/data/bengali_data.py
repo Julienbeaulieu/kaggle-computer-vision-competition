@@ -3,7 +3,7 @@ import pickle
 import numpy as np
 from yacs.config import CfgNode
 from torch.utils.data import Dataset, DataLoader
-from .preprocessing import Preprocessor
+from src.data.preprocessing import Preprocessor
 from typing import List
 import pandas as pd
 from pathlib import Path
@@ -52,7 +52,7 @@ class BengaliPredictionDataset(BengaliDataset):
     This is a bit different from the regular dataset as the img/labels are separated.
     """
 
-    def __init__(self, list_image_data: List, node_cfg_data: CfgNode, fname: Path, indices=None):
+    def __init__(self, list_image_data: List, node_cfg_data: CfgNode, fname: str, indices=None):
         """
         :param list_image_data: list of raw data consists of (image, labels)
         :param node_cfg_data: data config node
@@ -62,7 +62,9 @@ class BengaliPredictionDataset(BengaliDataset):
         self.list_image_data = list_image_data
         self.size_data = len(list_image_data)
 
-        # Record the indices
+        # Record the indices if that is not provided.
+        if indices is None:
+            indices = np.arange(self.size_data)
         self.indices = indices
 
         # Read the data frame. This will be used during get-item phase.
@@ -75,7 +77,7 @@ class BengaliPredictionDataset(BengaliDataset):
 
     def __len__(self) -> int:
         """
-        Instead of Returning the length of the dataset, now it returns the length of hte indices
+        Instead of Returning the length of the dataset, now it returns the length of the indices
         :return:
         """
         return len(self.indices)

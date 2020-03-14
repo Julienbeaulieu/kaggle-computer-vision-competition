@@ -9,7 +9,7 @@ import gc
 import pandas as pd
 
 #device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-device = "cpu"
+device = "cpu"  # can also be cuda
 import warnings
 from pathlib import Path
 
@@ -21,7 +21,7 @@ class PredictionMixin:
     """
 
 
-    def test_eval(self):
+    def test_eval(self, DataDir: Path or str):
         """
         This is adapted from Julien's test inference script from Kaggle.
         Assuming a model_restore is run and model predict is to be tested.
@@ -42,20 +42,19 @@ class PredictionMixin:
 
         batch_size = 1
 
-        DataDir = "/kaggle/input/bengaliai-cv19/"
-
         for index, name_file in enumerate(test_data):
 
             # Get the image data
             test_images = load_images('test', indices=[str(index)])
 
-            # fixme determine the full path of the name_file
+            # This is the full path to the testfile
             path_file = Path(DataDir) / name_file
 
             # Construct the DataSet from the images and file name.
             test_dataset = BengaliPredictionDataset(test_images, self.config.DATASET, fname=path_file.absolute())
 
-            test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False, num_workers=1)
+            # Construct the data loader from the data set.
+            test_loader = DataLoader(test_dataset, batch_size=batch_size, num_workers=self.config.DATASET.CPU_NUM, shuffle=False)
 
             with torch.no_grad():
                 # look through the test loader, which has only a SINGLE unit.

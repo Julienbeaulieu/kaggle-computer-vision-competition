@@ -1,12 +1,16 @@
-from src.models.model_build import BuildingMixin
-from src.models.model_train import TrainingMixin
 from src.models.model_restore import RestorationMixin
 from src.models.model_predict import PredictionMixin
 import os
 from src.config.config import combine_cfgs
 from dotenv import find_dotenv, load_dotenv
+
+
+load_dotenv(find_dotenv())
+
 path_CFG = os.getenv("path_cfg")
 path_model_weight = os.getenv("path_weight")
+# Get the path to the raw data folder for testing.
+path_test_data = os.getenv("path_test_data")
 
 class kaggle_project_submission(RestorationMixin, PredictionMixin):
 
@@ -30,16 +34,13 @@ class kaggle_project_submission(RestorationMixin, PredictionMixin):
         # Instantiate model, using the model weight specified, while using default self.config.
         self.restore(config=self.config, path_weight=input_path_model_weight)
 
-        # Train the model.
-        # self.train()
-        self.test_eval()
+    def test_submission(self):
+        """
+        Test predicting using the model
+        :return:
+        """
+        self.test_eval(path_test_data)
 
-
-        # Restore the model
-
-
-        # Predict using the model
-        pass
 
 
 if __name__=="__main__":
