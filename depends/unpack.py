@@ -3,6 +3,9 @@ import pickle
 import os
 
 class SimpleObj:
+	"""
+	This class data structure is required to decompress the entry and bin data.
+	"""
 	def __init__(self,fname, bdata):
 		self.name = fname
 		self.bdata= bdata
@@ -21,5 +24,7 @@ if __name__ == '__main__':
 		with open(i.name, 'wb') as p:
 			p.write(i.bdata)
 
-	# install 
+	# install
+	# If all goes well, it should return 0
 	os.system('pip install -r requirements.txt --no-index --find-links .')
+

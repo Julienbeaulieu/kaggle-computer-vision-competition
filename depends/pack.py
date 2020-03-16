@@ -4,6 +4,9 @@ import os
 from os import path
 
 class SimpleObj:
+	"""
+	This class data structure is required to store the entry and bin data.
+	"""
 	def __init__(self,fname, bdata):
 		self.name = fname
 		self.bdata= bdata
@@ -31,7 +34,7 @@ if __name__ == '__main__':
 			print(filename)
 			with open(filename, 'rb') as fl:
 				allBinData = fl.read()
-				d = SimpleObj(entry,allBinData)
+				d = SimpleObj(entry, allBinData)
 
 				installers.append(d)
 			

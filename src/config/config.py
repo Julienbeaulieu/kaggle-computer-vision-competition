@@ -161,7 +161,9 @@ def combine_cfgs(path_cfg_data: Path=None, path_cfg_override: Path=None):
 
 def update_cfg_using_dotenv() -> list:
     """
-    In case when there are dotenvs, try to return list.
+    In case when there are dotenvs, try to return list of them.
+
+    # It is returning a list of hard overwrite.
     :return: empty list or overwriting information
     """
     # If .env not found, bail
@@ -173,8 +175,28 @@ def update_cfg_using_dotenv() -> list:
     load_dotenv(find_dotenv(), verbose=True)
 
     # Load variables
-    path_overwrite_keys = ["DATASET.TRAIN_DATA_PATH", os.getenv("DATASET.TRAIN_DATA_PATH"),
-                           "DATASET.VAL_DATA_PATH", os.getenv("DATASET.VAL_DATA_PATH"),
-                           "MODEL.BACKBONE.PRETRAINED_PATH", os.getenv("MODEL.BACKBONE.PRETRAINED_PATH"),
-                           "MODEL.SOLVER.LOSS.LABELS_WEIGHTS_PATH", os.getenv("MODEL.SOLVER.LOSS.LABELS_WEIGHTS_PATH")]
+    list_key_env = {
+        "DATASET.TRAIN_DATA_PATH",
+        "DATASET.VAL_DATA_PATH",
+        "MODEL.BACKBONE.PRETRAINED_PATH",
+        "MODEL.SOLVER.LOSS.LABELS_WEIGHTS_PATH"
+    }
+
+    # Instantiate return list.
+    path_overwrite_keys = []
+
+    # Go through the list of key to be overwritten.
+    for key in list_key_env:
+
+        # Get value from the env.
+        value = os.getenv("path_overwrite_keys")
+
+        # If it is none, skip. As some keys are only needed during training and others during the prediction stage.
+        if value is None:
+            continue
+
+        # Otherwise, adding the key and the value to the dictionary.
+        path_overwrite_keys.append(key)
+        path_overwrite_keys.append(value)
+
     return path_overwrite_keys

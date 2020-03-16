@@ -7,6 +7,7 @@ from torch import nn
 import torch
 import gc
 import pandas as pd
+import os
 
 #device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 device = "cpu"  # can also be cuda
@@ -27,9 +28,21 @@ class PredictionMixin:
         Assuming a model_restore is run and model predict is to be tested.
         :return:
         """
+        if self.debug:
+            print("assert model")
         assert self.model is not None
+
+        if self.debug:
+            print("assert config")
         assert self.config is not None
 
+        if self.debug:
+            print("assert_datadir")
+        if not os.path.isdir(DataDir):
+            raise ValueError("A valid data directory MUST be specified")
+
+        if self.debug:
+            print("assert_model")
         self.model.eval()
 
         #  list of test data.
@@ -46,7 +59,8 @@ class PredictionMixin:
 
             # Get the image data
             test_images = load_images('test', indices=[str(index)])
-
+            if self.debug:
+                print("forming file path")
             # This is the full path to the testfile
             path_file = Path(DataDir) / name_file
 

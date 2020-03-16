@@ -99,3 +99,9 @@ configs/inbox
 configs/Archive/
 
 models/mobilenet_v2-b0353104.pth
+
+/depends/depends.zip
+/depends/dill.pkl
+/depends/wheelhouse
+submission.csv
+/depends/wheelhouse/
