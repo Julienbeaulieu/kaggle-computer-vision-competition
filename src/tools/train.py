@@ -115,7 +115,6 @@ def train(cfg, debug=False):
     optimizer = build_optimizer(model, opti_cfg)
 
     # Build scheduler
-
     sched_cfg = solver_cfg.SCHEDULER
     scheduler_type = sched_cfg.NAME
     scheduler = build_scheduler(optimizer, sched_cfg, steps_per_epoch=np.int(len(train_loader)), epochs=total_epochs)
@@ -147,7 +146,7 @@ def train(cfg, debug=False):
         total_acc = 0
 
         for idx, (inputs, labels) in enumerate(train_itr):
-
+            
             # Compute
             input_data = inputs.float().cuda()
             labels = labels.cuda()
@@ -270,10 +269,12 @@ def train(cfg, debug=False):
         val_kaggle_score = val_result['kaggle_score']
         writer_tensorboard.add_scalar('Kaggle_Score/Val', val_kaggle_score, global_step=epoch)
 
-        # track learning rate because we used OneCycleLR scheduler
+        # track learning rate and momentum because we used OneCycleLR scheduler
         lr = optimizer.param_groups[-1]['lr']
-        # momentum = optimizer.param_groups[-1]['momentum']
+        momentum = optimizer.param_groups[-1]['betas'][0]
+
         writer_tensorboard.add_scalar('learning_rate', lr, global_step=epoch)
+        writer_tensorboard.add_scalar('momentum', momentum, global_step=epoch)
         # writer_tensorboard.add_scalar('momentum', momentum, global_step=epoch)
         # Write to disk
         writer_tensorboard.flush()
@@ -348,3 +349,10 @@ if __name__ == '__main__':
         cfg.merge_from_file(cfg_path)
     cfg.OUTPUT_PATH = output_path
     train(cfg)
+
+
+    # cfg = get_cfg_defaults()
+    #     if cfg_path is not None:
+    #     cfg.merge_from_file(cfg_path)
+    #  train(cfg)
+

@@ -5,8 +5,16 @@ This is the combined effort to build a pipeline in PyTorch to attempt Kaggle com
 
 In this competition, we are given the images of a handwritten Bengali grapheme and are challenged to separately classify three constituent elements in the image: grapheme root, vowel diacritics, and consonant diacritics. 
 
+Implementation Highlights
+------------
+YAML config files, Mixup & albumentation library augmentations, label smoothing, OHEM, label weights for class imbalance, progressive resizing, OneCycleLR, Tensorboard. 
+Models: MobileNet_V2, DenseNet121, SE_ResNeXT50
+
+
 Project Organization
 ------------
+Based on Facebook Research Detectron2 project and Cookie Cutter data science
+
 
     ├── README.md          
     ├── data

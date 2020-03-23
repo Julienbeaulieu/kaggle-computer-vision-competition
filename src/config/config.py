@@ -61,7 +61,7 @@ __C.MODEL.HEAD.OUTPUT_DIMS = [168, 11, 7]
 __C.MODEL.HEAD.INPUT_DIM = 1280  # MobileNet_V2 
 __C.MODEL.HEAD.HIDDEN_DIMS = [512, 256]
 __C.MODEL.HEAD.BN = True
-__C.MODEL.HEAD.DROPOUT = -1
+__C.MODEL.HEAD.DROPOUT = -1.0
 
 __C.MODEL.SOLVER = ConfigurationNode()
 __C.MODEL.SOLVER.LABELS_WEIGHTS_PATH = 'C:/Users/nasty/data-science/kaggle/bengali/data/interim/labels_weights.p'
@@ -103,11 +103,90 @@ __C.RESUME_PATH = ''
 
 def get_cfg_defaults():
   """
-  Get a yacs CfgNode object with default values for my_project.
+  Get a yacs CfgNode object with default values
   """
   # Return a clone so that the defaults will not be altered
-  # This is for the "local variable" use pattern recommended by the YACS repo.
   # It will be subsequently overwritten with local YAML.
   return __C.clone()
+
+def combine_cfgs(path_cfg_data: Path=None, path_cfg_override: Path=None):
+    """
+    An internal facing routine thaat combined CFG in the order provided.
+    :param path_output: path to output files
+    :param path_cfg_data: path to path_cfg_data files
+    :param path_cfg_override: path to path_cfg_override actual
+    :return: cfg_base incorporating the overwrite.
+    """
+    if path_cfg_data is not None:
+        path_cfg_data=Path(path_cfg_data)
+    if path_cfg_override is not None:
+        path_cfg_override=Path(path_cfg_override)
+    # Path order of precedence is:
+    # Priority 1, 2, 3, 4 respectively
+    # .env > other CFG YAML > data.yaml > default.yaml
+
+    # Load default lowest tier one:
+    # Priority 4:
+    cfg_base = get_cfg_defaults()
+
+    # Merge from the path_data
+    # Priority 3:
+    if path_cfg_data is not None and path_cfg_data.exists():
+        cfg_base.merge_from_file(path_cfg_data.absolute())
+
+    # Merge from other cfg_path files to further reduce effort
+    # Priority 2:
+    if path_cfg_override is not None and path_cfg_override.exists():
+        cfg_base.merge_from_file(path_cfg_override.absolute())
+
+    # Merge from .env
+    # Priority 1:
+    list_cfg = update_cfg_using_dotenv()
+    if list_cfg is not []:
+        cfg_base.merge_from_list(list_cfg)
+
+    return cfg_base
+
+def update_cfg_using_dotenv() -> list:
+    """
+    In case when there are dotenvs, try to return list of them.
+
+    # It is returning a list of hard overwrite.
+    :return: empty list or overwriting information
+    """
+    # If .env not found, bail
+    if find_dotenv() == '':
+        warnings.warn(".env files not found. YACS config file merging aborted.")
+        return []
+
+    # Load env.
+    load_dotenv(find_dotenv(), verbose=True)
+
+    # Load variables
+    list_key_env = {
+        "DATASET.TRAIN_DATA_PATH",
+        "DATASET.VAL_DATA_PATH",
+        "MODEL.BACKBONE.PRETRAINED_PATH",
+        "MODEL.SOLVER.LOSS.LABELS_WEIGHTS_PATH"
+    }
+
+    # Instantiate return list.
+    path_overwrite_keys = []
+
+    # Go through the list of key to be overwritten.
+    for key in list_key_env:
+
+        # Get value from the env.
+        value = os.getenv("path_overwrite_keys")
+
+        # If it is none, skip. As some keys are only needed during training and others during the prediction stage.
+        if value is None:
+            continue
+
+        # Otherwise, adding the key and the value to the dictionary.
+        path_overwrite_keys.append(key)
+        path_overwrite_keys.append(value)
+
+    return path_overwrite_keys
 
 

@@ -1,0 +1,29 @@
+# mixup_alpha = 0.3
+DATASET:
+  BATCH_SIZE: 64
+  RESIZE_SHAPE: (160, 160)
+  AUGMENTATION:
+    BLURRING_PROB: 0.1
+    GAUSS_NOISE_PROB: 0.3
+    BLUR_LIMIT: 3
+    GAUSS_VAR_LIMIT: (10.0, 20.0)
+    GRID_DISTORTION_PROB: 0.2
+    ROTATION_PROB: 0.5
+    ROTATION_DEGREE: 15
+MODEL:
+  BAKBONE: 
+    PRETRAINED_PATH: C:/Users/nasty/data-science/kaggle/bengali-git/bengali.ai/experiments/exp19/model_2020-03-11T23_09_22.022075.pt
+  HEAD:
+    NAME: simple_head_kaiming
+
+    HIDDEN_DIMS: [500, 400, 300, 200]
+    DROPOUT: 0.3
+  SOLVER: 
+    LOSS:
+      NAME: label_smoothing_ce
+    SCHEDULER:
+      TOTAL_EPOCHS: 30
+      PCT_START: 0.3
+
+
+

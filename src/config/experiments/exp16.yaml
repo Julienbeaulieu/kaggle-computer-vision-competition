@@ -1,0 +1,19 @@
+# mixup_alpha = 0.3
+DATASET:
+  BATCH_SIZE: 32
+MODEL:
+  BACKBONE:
+    NAME: se_resnext50
+    PRETRAINED_PATH: C:/Users/nasty/data-science/kaggle/bengali-git/bengali.ai/models/se_resnext50_32x4d-a260b3a4.pth
+  HEAD:
+    NAME: simple_head_kaiming
+    INPUT_DIM: 2048
+    DROPOUT: 0.4
+  SOLVER: 
+    LOSS:
+      NAME: label_smoothing_ce
+    SCHEDULER:
+      TOTAL_EPOCHS: 30
+      PCT_START: 0.3
+
+
