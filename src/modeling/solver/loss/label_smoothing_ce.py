@@ -44,6 +44,7 @@ class SoftmaxCE(torch.nn.Module):
         self.reduction = loss_cfg.REDUCTION
         self.weights = weights
         self.loss_fn = LabelSmoothingCrossEntropy(loss_cfg, self.eps, self.reduction)
+        #self.loss_fn = CrossEntropy()
 
     def forward(self, logits, labels):
         loss = 0

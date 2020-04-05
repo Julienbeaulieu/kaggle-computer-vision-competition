@@ -4,7 +4,7 @@ DATASET:
 MODEL:
   BACKBONE:
     NAME: se_resnext50
-    PRETRAINED_PATH: C:/Users/nasty/data-science/kaggle/bengali-git/bengali.ai/models/se_resnext50_32x4d-a260b3a4.pth
+    PRETRAINED_PATH: C:/Users/nasty/data-science/kaggle/bengali-git/bengali.ai/models/se_resnet50-ce0d4300.pth
   HEAD:
     INPUT_DIM: 2048
   SOLVER: 
@@ -15,7 +15,6 @@ MODEL:
     SCHEDULER:
       TOTAL_EPOCHS: 30
       NAME: ReduceLROnPlateau
-RESUME_PATH: C:\Users\nasty\data-science\kaggle\bengali-git\bengali.ai\experiments\exp12\model_backups\model_bak_000006.pt
-
+RESUME_PATH: C:\Users\nasty\data-science\kaggle\bengali-git\bengali.ai\experiments\exp15\model_2020-03-06T12_11_21.047502.pt
 
 

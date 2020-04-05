@@ -78,9 +78,11 @@ target/
 
 # exclude data from source control by default
 /data/
+/experiments/
 /models/
 /src/models
-/src/config/mobilnet_V2/
+/src/config/experiments/
+notes.md
 
 # Mac OS-specific storage files
 .DS_Store

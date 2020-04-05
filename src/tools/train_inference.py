@@ -160,7 +160,7 @@ def train(cfg):
             # tabulate the steps from the evaluation
             eval_result = {k: eval_result[k].item() for k in eval_result} 
 
-            if scheduler_type == 'OneCyleLR':
+            if scheduler_type == 'OneCycleLR':
                 scheduler.step()       
 
             if idx % 100 == 0:
@@ -207,7 +207,10 @@ def train(cfg):
         train_kaggle_score = train_result['kaggle_score']
         writer_tensorboard.add_scalar('Kaggle_Score/train', train_kaggle_score, global_step=epoch)
 
+        # track learning rate because we used OneCycleLR scheduler
         lr = optimizer.param_groups[-1]['lr']
+        # momentum = optimizer.param_groups[-1]['momentum']
+        writer_tensorboard.add_scalar('learning_rate', lr, global_step=epoch)
 
         # Print results
         print("Epoch {0} Training, Loss {1}, Acc {2}, kaggle Score {3}, lr {4}".format(epoch, 
@@ -218,10 +221,6 @@ def train(cfg):
         evaluator.clear_cache()
 
         writer_tensorboard.flush()
-
-        if scheduler is not None:
-            if scheduler_type == 'ReduceLROnPlateau':
-                scheduler.step(val_total_err)
 
         ######################################
         # Saving the model + performance

@@ -1,4 +1,4 @@
-# label_smoothing - float = 0.2
+# mixup_alpha = 0.3
 DATASET:
   BATCH_SIZE: 32
 MODEL:
@@ -6,16 +6,14 @@ MODEL:
     NAME: se_resnext50
     PRETRAINED_PATH: C:/Users/nasty/data-science/kaggle/bengali-git/bengali.ai/models/se_resnext50_32x4d-a260b3a4.pth
   HEAD:
+    NAME: simple_head_kaiming
     INPUT_DIM: 2048
+    DROPOUT: 0.4
   SOLVER: 
     LOSS:
       NAME: label_smoothing_ce
-      EPS: 0.2
-      #OHEM_RATE: 0.7
     SCHEDULER:
       TOTAL_EPOCHS: 30
-      NAME: ReduceLROnPlateau
-RESUME_PATH: C:\Users\nasty\data-science\kaggle\bengali-git\bengali.ai\experiments\exp12\model_backups\model_bak_000006.pt
-
+      PCT_START: 0.3
 
 

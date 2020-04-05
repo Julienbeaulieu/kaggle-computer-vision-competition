@@ -20,7 +20,7 @@ class MixupAugmenter(nn.Module):
         data, targets = mixup(data, labels, alpha, do_cutmix)
         return data, targets
 
-def mixup(data, labels, alpha=0.4, cut_mix=False):
+def mixup(data, labels, alpha=0.3, cut_mix=False):
     targets1 = labels[:, 0]
     targets2 = labels[:, 1]
     targets3 = labels[:, 2]

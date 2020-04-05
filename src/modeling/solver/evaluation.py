@@ -9,7 +9,7 @@ from .loss import build_loss
 
 class MultiHeadsEval(nn.Module):
 
-    def __init__(self, solver_cfg: CfgNode):
+    def __init__(self, solver_cfg: CfgNode): # training=True
         super(MultiHeadsEval, self).__init__()
         weights_path = solver_cfg.LABELS_WEIGHTS_PATH
         loss_cfg = solver_cfg.LOSS
@@ -35,6 +35,11 @@ class MultiHeadsEval(nn.Module):
         self.labels_cache = []
         self.acc_cache = []
         self.loss_cache = []
+
+    # if training:
+    #     build_loss ...
+    # else: 
+    #     build_loss(loss_cfg, do_mixup=False, weights=grapheme_weights, eps=loss_cfg.EPS, reduction=None)
 
     def forward(self, grapheme_logits: torch.Tensor, vowel_logits: torch.Tensor, consonant_logits: torch.Tensor,
                 labels: torch.Tensor) -> Dict:
