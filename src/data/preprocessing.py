@@ -2,22 +2,24 @@ import numpy as np
 from numpy import ndarray
 from yacs.config import CfgNode
 from albumentations import OneOf, Compose, MotionBlur, MedianBlur, Blur, RandomBrightnessContrast, GaussNoise, \
-    GridDistortion, Rotate, CoarseDropout, Cutout
+    GridDistortion, Rotate, HorizontalFlip, CoarseDropout, Cutout
+from .grid_mask import GridMask
 from typing import Union, List, Tuple
-import cv2
+from .augmix import augmentations, augment_and_mix
+
 from cv2 import resize
+import torch
 
-
-def content_crop(img: ndarray, pad_to_square: bool, white_background: bool):
+def content_crop(img: ndarray, white_background: bool):
     """
+    Center the content, removed
     https://www.kaggle.com/iafoss/image-preprocessing-128x128
 
     :param img: grapheme image matrix
-    :param pad_to_square:  whether pad to square (preserving aspect ratio)
     :param white_background: whether the image
     :return: cropped image matrix
     """
-    # remove the surrounding 5 pixels
+    # Remove the surrounding 5 pixels
     img = img[5:-5, 5:-5]
     if white_background:
         y_list, x_list = np.where(img < 235)
@@ -28,27 +30,28 @@ def content_crop(img: ndarray, pad_to_square: bool, white_background: bool):
     xmin, xmax = np.min(x_list), np.max(x_list)
     ymin, ymax = np.min(y_list), np.max(y_list)
 
+    # Manually set the baseline low and high for x&y
     xmin = xmin - 13 if (xmin > 13) else 0
     ymin = ymin - 10 if (ymin > 10) else 0
     xmax = xmax + 13 if (xmax < 223) else 236
     ymax = ymax + 10 if (ymax < 127) else 137
+
+    # Reposition the images
     img = img[ymin:ymax, xmin:xmax]
 
-    # remove lo intensity pixels as noise
-    if white_background:
-        img[img > 235] = 255
-    else:
-        img[img < 28] = 0
+    return img
 
-    if pad_to_square:
-        lx, ly = xmax - xmin, ymax - ymin
-        l = max(lx, ly) + 16
-        # make sure that the aspect ratio is kept in rescaling
-        if white_background:
-            constant_pad = 255
-        else:
-            constant_pad = 0
-        img = np.pad(img, [((l - ly) // 2,), ((l - lx) // 2,)], mode='constant', constant_values=constant_pad)
+
+def pad_to_square(img: ndarray, white_background: bool):
+    ly, lx = img.shape
+
+    l = max(lx, ly) + 16
+    if white_background:
+        constant_pad = 255
+    else:
+        constant_pad = 0
+    img = np.pad(img, [((l - ly) // 2,), ((l - lx) // 2,)], mode='constant', constant_values=constant_pad)
+    return img
 
     return img
 
@@ -57,20 +60,44 @@ class Preprocessor(object):
     bengali data preprocessor
     """
 
-    def __init__(self, dataset_cfg: CfgNode):
+    def __init__(self, node_cfg_dataset: CfgNode):
         """
+        Constructor of the Preprocessing from the Configuration Node properties.
+        :param node_cfg_dataset: dataset config
+        """
+        # Augmentation node is the
+        aug_cfg = node_cfg_dataset.AUGMENTATION
 
-        :param dataset_cfg: dataset config
-        """
-        aug_cfg = dataset_cfg.AUGMENTATION
+
+        # !!!Training ONLY!!!
+        # Color augmentation settings,
         self.color_aug = self.generate_color_augmentation(aug_cfg)
+        # Shape augmentation settings
         self.shape_aug = self.generate_shape_augmentation(aug_cfg)
+        # Cutout augmentation settings
         self.cutout_aug = self.generate_cutout_augmentation(aug_cfg)
-        self.resize_shape = dataset_cfg.RESIZE_SHAPE
-        self.crop = dataset_cfg.CONCENTRATE_CROP
-        self.to_rgb = dataset_cfg.TO_RGB
-        self.normalize_mean = dataset_cfg.get('NORMALIZE_MEAN')
-        self.normalize_std = dataset_cfg.get('NORMALIZE_STD')
+        self.pad = node_cfg_dataset.PAD_TO_SQUARE
+        self.white_background = node_cfg_dataset.WHITE_BACKGROUND
+        self.do_augmix = node_cfg_dataset.DO_AUGMIX
+
+        # !!!~~~BOTH~~~!!!
+        # Color augmentation settings,
+        self.resize_shape = node_cfg_dataset.RESIZE_SHAPE
+        # Crop augmentation settings,
+        self.crop = node_cfg_dataset.CONCENTRATE_CROP
+        # Convert to RGB
+        self.to_rgb = node_cfg_dataset.TO_RGB
+        # Normalize Mean or STD?
+        self.normalize_mean = node_cfg_dataset.get('NORMALIZE_MEAN')
+        self.normalize_std = node_cfg_dataset.get('NORMALIZE_STD')
+
+
+        if self.do_augmix:
+            augmentations.IMAGE_SIZE = node_cfg_dataset.RESIZE_SHAPE[0]
+
+        if not self.to_rgb:
+            self.normalize_mean = np.mean(self.normalize_mean)
+            self.normalize_std = np.mean(self.normalize_std)
 
         if not self.to_rgb:
             self.normalize_mean = np.mean(self.normalize_mean)
@@ -96,8 +123,9 @@ class Preprocessor(object):
             color_aug_list.append(blurring)
 
         if aug_cfg.GAUSS_NOISE_PROB > 0:
-            color_aug_list.append(GaussNoise(var_limit=aug_cfg.GAUSS_VAR_LIMIT, p=aug_cfg.GAUSS_NOISE_PROB))
-
+            color_aug_list.append(GaussNoise(p=aug_cfg.GAUSS_NOISE_PROB))
+        if aug_cfg.GRID_MASK_PROB > 0:
+            color_aug_list.append(GridMask(num_grid=(3, 7), p=aug_cfg.GRID_MASK_PROB))
         if len(color_aug_list) > 0:
             color_aug = Compose(color_aug_list, p=1)
             return color_aug
@@ -118,7 +146,8 @@ class Preprocessor(object):
             )
         if aug_cfg.GRID_DISTORTION_PROB > 0:
             shape_aug_list.append(GridDistortion(p=aug_cfg.GRID_DISTORTION_PROB))
-
+        if aug_cfg.HORIZONTAL_FLIP_PROB > 0:
+            shape_aug_list.append(HorizontalFlip(p=aug_cfg.HORIZONTAL_FLIP_PROB ))
         if len(shape_aug_list) > 0:
             shape_aug = Compose(shape_aug_list, p=1)
             return shape_aug
@@ -139,31 +168,50 @@ class Preprocessor(object):
         else:
             return None  
 
-    def __call__(self, img: ndarray, is_training: bool, normalize: bool = True) -> ndarray:
+    def __call__(self, img: ndarray, is_training: bool, normalize: bool = True) -> Union[ndarray, Tuple]:
         """
-        make the transformation
+        Conduct the transformation
         :param img: input img array
         :param is_training: whether it's training (to do augmentation)
         :return : transformed data
         """
         x = img
 
+        # if not white background, reverse
+        if not self.white_background:
+            x = 255 - x
+
         # crop
         if self.crop:
-            x = content_crop(x, pad_to_square=True, white_background=True)
-
+            x = content_crop(x, self.white_background)
+        if self.pad:
+            x = pad_to_square(x, self.white_background)
         # resize
         x = resize(x, self.resize_shape)
 
         # to RGB
         if self.to_rgb:
             x = np.repeat(np.expand_dims(x, axis=-1), 3, axis=-1)
+        else:
+            x = np.expand_dims(x, axis=-1)
+
+        # shape augment
+        if is_training:
+            if self.do_augmix:
+                return self.compute_augmix_inputs(img)
+            else:
+                # normal shape color changes
+                if self.shape_aug is not None:
+                    x = self.shape_aug(image=x)['image']
+
+                if self.color_aug is not None:
+                    x = self.color_aug(image=x)['image']
 
         # shape augment
         if is_training and self.shape_aug is not None:
             x = self.shape_aug(image=x)['image']
 
-        # color augment
+        # color & cutout augment
         if is_training and self.color_aug is not None:
             x = self.color_aug(image=x)['image']
             x = self.cutout_aug(image=x)['image']
@@ -174,9 +222,31 @@ class Preprocessor(object):
         x = self.normalize_img(x)
         return x
 
+        x = self.normalize_img(x)
+
+        # Resume the permutation
+        img = torch.tensor(x)
+        img = img.permute([2, 0, 1])
+
+        return img
+
     def normalize_img(self, x: ndarray) -> ndarray:
+        """
+        Normalize image to a specific mean/std if they are specifiied, otherwise, default to /255
+        :param x:
+        :return:
+        """
         # normalize to 0-1
         x = x / 255.
         if self.normalize_mean is not None:
             x = (x - self.normalize_mean) / self.normalize_std
         return x
+
+    def compute_augmix_inputs(self, img):
+        aug1 = augment_and_mix(img)
+        aug1 = self.normalize_img(aug1)
+        aug2 = augment_and_mix(img)
+        aug2 = self.normalize_img(aug2)
+
+        img = self.normalize_img(img)
+        return img, aug1, aug2

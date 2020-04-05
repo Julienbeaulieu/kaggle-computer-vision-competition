@@ -1,18 +1,19 @@
 import torch
 import pickle
 import numpy as np
-from typing import List, Dict, Union
-from yacs.config import CfgNode
 from torch import nn
+from collections import Counter
+from yacs.config import CfgNode
+from typing import List, Dict, Union
 from sklearn.metrics import classification_report
+#from .loss import WeightedFocalLoss, SoftMaxCE
 from .loss import build_loss
 
-class MultiHeadsEval(nn.Module):
-
-    def __init__(self, solver_cfg: CfgNode): # training=True
-        super(MultiHeadsEval, self).__init__()
-        weights_path = solver_cfg.LABELS_WEIGHTS_PATH
+class MultiHeadsEvaluation(nn.Module):
+    def __init__(self, solver_cfg: CfgNode):
+        super(MultiHeadsEvaluation, self).__init__()
         loss_cfg = solver_cfg.LOSS
+        weights_path = loss_cfg.LABELS_WEIGHTS_PATH
         do_mixup = solver_cfg.MIXUP_AUGMENT
         if weights_path != '':
             weights_data = pickle.load(open(weights_path, 'rb'))
@@ -24,11 +25,11 @@ class MultiHeadsEval(nn.Module):
             vowel_weights = None
             consonant_weights = None
 
-        self.grapheme_loss_fn = build_loss(loss_cfg, do_mixup=do_mixup, weights=grapheme_weights, eps=loss_cfg.EPS, reduction=loss_cfg.REDUCTION, num_classes=168)
-        self.vowel_loss_fn = build_loss(loss_cfg, do_mixup=do_mixup, weights=vowel_weights, eps=loss_cfg.EPS, reduction=loss_cfg.REDUCTION, num_classes=11)
-        self.consonant_loss_fn = build_loss(loss_cfg, do_mixup=do_mixup, weights=consonant_weights, eps=loss_cfg.EPS, reduction=loss_cfg.REDUCTION, num_classes=7)
+        self.grapheme_loss_fn = build_loss(loss_cfg, do_mixup=do_mixup, weights=grapheme_weights, num_classes=168)
+        self.vowel_loss_fn = build_loss(loss_cfg, do_mixup=do_mixup, weights=vowel_weights, num_classes=11)
+        self.consonant_loss_fn = build_loss(loss_cfg, do_mixup=do_mixup, weights=consonant_weights, num_classes=7)
         self.do_mixup = do_mixup
-        
+
         self.grapheme_logits_cache = []
         self.vowel_logits_cache = []
         self.consonant_logits_cache = []
@@ -36,23 +37,17 @@ class MultiHeadsEval(nn.Module):
         self.acc_cache = []
         self.loss_cache = []
 
-    # if training:
-    #     build_loss ...
-    # else: 
-    #     build_loss(loss_cfg, do_mixup=False, weights=grapheme_weights, eps=loss_cfg.EPS, reduction=None)
-
     def forward(self, grapheme_logits: torch.Tensor, vowel_logits: torch.Tensor, consonant_logits: torch.Tensor,
-                labels: torch.Tensor) -> Dict:
+                labels: Union[tuple, torch.Tensor], js_divergence: bool = False) -> Dict:
 
         if self.do_mixup:
             labels, grapheme_labels, vowel_labels, consonant_labels = mixup_labels_helper(labels)
         else:
             grapheme_labels, vowel_labels, consonant_labels = labels[:, 0], labels[:, 1], labels[:, 2]
 
-        # compute loss - call EvalBlock's forward function on our 3 classes
-        grapheme_loss, grapheme_acc = self.grapheme_loss_fn(grapheme_logits, grapheme_labels)
-        vowel_loss, vowel_acc = self.vowel_loss_fn(vowel_logits, vowel_labels)
-        consonant_loss, consonant_acc = self.consonant_loss_fn(consonant_logits, consonant_labels)
+        grapheme_loss, grapheme_acc = self.grapheme_loss_fn(grapheme_logits, grapheme_labels, js_divergence)
+        vowel_loss, vowel_acc = self.vowel_loss_fn(vowel_logits, vowel_labels, js_divergence)
+        consonant_loss, consonant_acc = self.consonant_loss_fn(consonant_logits, consonant_labels, js_divergence)
 
         loss = grapheme_loss + vowel_loss + consonant_loss
         acc = (grapheme_acc + vowel_acc + consonant_acc) / 3
@@ -67,7 +62,6 @@ class MultiHeadsEval(nn.Module):
             'loss': loss,
             'acc': acc
         }
-
         # dump data in cache
         self.grapheme_logits_cache.append(grapheme_logits.detach().cpu().numpy())
         self.vowel_logits_cache.append(vowel_logits.detach().cpu().numpy())
@@ -75,7 +69,6 @@ class MultiHeadsEval(nn.Module):
         self.labels_cache.append(labels.detach().cpu().numpy())
         self.loss_cache.append(loss.detach().item())
         self.acc_cache.append(acc.detach().item())
-
         return eval_result
 
     def clear_cache(self):
@@ -86,8 +79,7 @@ class MultiHeadsEval(nn.Module):
         self.loss_cache = []
         self.acc_cache = []
 
-
-    def evaluate_on_cache(self):
+    def evalulate_on_cache(self):
         grapheme_logits_all = np.vstack(self.grapheme_logits_cache)
         vowel_logits_all = np.vstack(self.vowel_logits_cache)
         consonant_logits_all = np.vstack(self.consonant_logits_cache)
@@ -103,22 +95,39 @@ class MultiHeadsEval(nn.Module):
         kaggle_score = (grapheme_clf_result['macro avg']['recall'] * 2 + vowels_clf_result['macro avg']['recall'] +
                         consonant_clf_result['macro avg']['recall']) / 4
 
+        preds_labels = []
+        for idx, grapheme_pred in enumerate(grapheme_preds):
+            vowel_pred = vowels_preds[idx]
+            consonant_pred = consonant_preds[idx]
+            labels = labels_all[idx]
+            entry = {
+                'grapheme_pred': grapheme_pred,
+                'vowel_pred': vowel_pred,
+                'consonant_pred': consonant_pred,
+                'grapheme_label': labels[0],
+                'vowel_label': labels[1],
+                'consonant_label': labels[2]
+            }
+            preds_labels.append(entry)
+
+        grapheme_clf_result = clf_result_helper(grapheme_clf_result, preds_labels, 'grapheme_pred', 'grapheme_label')
+        vowels_clf_result = clf_result_helper(vowels_clf_result, preds_labels, 'vowel_pred', 'vowel_label')
+        consonant_clf_result = clf_result_helper(consonant_clf_result, preds_labels, 'consonant_pred',
+                                                 'consonant_label')
 
         acc = np.mean(self.acc_cache)
         loss = np.mean(self.loss_cache)
-
-
         result = {
             'grapheme_clf_result': grapheme_clf_result,
-            'vowels_clf_result': vowels_clf_result,
+            'vowel_clf_result': vowels_clf_result,
             'consonant_clf_result': consonant_clf_result,
             'kaggle_score': kaggle_score,
-            #'preds_labels': preds_labels,
+            'preds_labels': preds_labels,
             'acc': acc,
             'loss': loss
-
         }
         return result
+
 
 def mixup_labels_helper(labels: tuple):
     grapheme_labels, shuffled_grapheme_labels, vowel_labels, shuffled_vowel_labels, \
@@ -130,10 +139,41 @@ def mixup_labels_helper(labels: tuple):
     consonant_labels = (consonant_labels, shuffled_consonant_labels, lam)
     return labels, grapheme_labels, vowel_labels, consonant_labels
 
-def build_evaluator(solver_cfg: CfgNode) -> MultiHeadsEval:
+
+def clf_result_helper(clf_result: Dict, preds_labels: List, pred_key: str, label_key: str):
+    """
+    a helper function get per class result the highest error class, and highest error class occurences
+    :param clf_result:  classfier result dict from classificaiton_report
+    :param preds_labels: list of preds and labels
+    :param pred_key:  one of [grapheme_pred, vowel_pred, consonant_pred]
+    :param label_key: one of [grapheme_label, vowel_label, consonant_label]
+    :return: list view of clf result with some added info
+    """
+    for k in clf_result.keys():
+        if k not in ['accuracy', 'macro avg', 'weighted avg']:
+            cls = int(k)
+            preds_counts = Counter([x[pred_key] for x in preds_labels if x[label_key] == cls])
+            preds_counts = [[k, preds_counts[k]] for k in preds_counts]
+            incorrect_preds_counts = [x for x in preds_counts if x[0] != cls]
+            if len(incorrect_preds_counts) > 0:
+                highest_error_cls, highest_error_cls_num = sorted(incorrect_preds_counts, key=lambda x: x[1])[-1]
+            else:
+                highest_error_cls, highest_error_cls_num = -1, 0
+
+            clf_result[k]['class'] = cls
+            clf_result[k]['error_cls'] = highest_error_cls
+            if clf_result[k]['support'] > 0:
+                clf_result[k]['error_cls_rate'] = highest_error_cls_num / clf_result[k]['support']
+            else:
+                clf_result[k]['error_cls_rate'] = 0
+    clf_result = [clf_result[k] for k in clf_result if k not in ['accuracy', 'macro avg', 'weighted avg']]
+    return clf_result
+
+
+def build_evaluator(solver_cfg: CfgNode):
     if solver_cfg.MIXUP_AUGMENT:
         nomixup_cfg = solver_cfg.clone()
         nomixup_cfg.MIXUP_AUGMENT = False
-        return MultiHeadsEval(nomixup_cfg), MultiHeadsEval(solver_cfg)
+        return MultiHeadsEvaluation(nomixup_cfg), MultiHeadsEvaluation(solver_cfg)
     else:
-        return MultiHeadsEval(solver_cfg), None
+        return MultiHeadsEvaluation(solver_cfg), None

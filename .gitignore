@@ -28,7 +28,6 @@ var/
 #  before PyInstaller builds the exe, so as to inject date/other infos into it.
 *.manifest
 *.spec
-
 results/
 # Installer logs
 pip-log.txt
@@ -97,3 +96,17 @@ notes.md
 .idea/
 __pycache__
 configs/eai_server_paths.yaml
+
+# inbox folder for experiment runs should stay local
+configs/inbox
+
+
+configs/Archive/
+
+models/mobilenet_v2-b0353104.pth
+
+/depends/depends.zip
+/depends/dill.pkl
+/depends/wheelhouse
+submission.csv
+/depends/wheelhouse/

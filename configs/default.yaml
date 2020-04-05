@@ -1,13 +1,27 @@
+DESCRIPTION: default config
 DATASET:
   NAME: bengali_kaggle
   TRAIN_DATA_PATH: C:/Users/mingy/Documents/ml_data/bengali/train_data.p
   VAL_DATA_PATH: C:/Users/mingy/Documents/ml_data/bengali/val_data.p
+<<<<<<< HEAD
   TRAIN_DATA_SAMPLE: C:/Users/nasty/data-science/kaggle/bengali/data/interim/train_data_sample.p
   VALID_DATA_SAMPLE: C:/Users/nasty/data-science/kaggle/bengali/data/interim/valid_data_sample.p
   DEFAULT_SIZE:
   - 137
   - 236
   CONCENTRATE_CROP: true
+=======
+  USE_FOLDS_DATA: False
+  VALIDATION_FOLD: 4
+  FOLDS_PATH: ""
+  DEFAULT_SIZE:
+  - 137
+  - 236
+  DO_AUGMIX: false
+  CONCENTRATE_CROP: true
+  WHITE_BACKGROUND: true
+  PADD_TO_SQUARE: false
+>>>>>>> DevYang
   GRAPHEME_SIZE: 168
   VOWEL_SIZE: 11
   CONSONANT_SIZE: 7
@@ -18,9 +32,14 @@ DATASET:
     GRID_DISTORTION_PROB: 1
     ROTATION_DEGREE: 20
     ROTATION_PROB: 1
+<<<<<<< HEAD
     CUTOUT_PROB: 0.3
     HEIGHT: 128
     WIDTH: 128
+=======
+    GRID_MASK_PROB: 0.0
+    HORIZONTAL_FLIP_PROB: 0.0
+>>>>>>> DevYang
   BATCH_SIZE: 32
   CPU_NUM: 1
   NORMALIZE_MEAN:
@@ -35,12 +54,19 @@ DATASET:
   RESIZE_SHAPE:
   - 128
   - 128
+  FOCUS_CLASS: []
 MODEL:
   META_ARCHITECTURE: baseline
   NORMALIZATION_FN: BN
   BACKBONE:
     NAME: mobilenet_v2
+<<<<<<< HEAD
     PRETRAINED_PATH: C:/Users/nasty/data-science/kaggle/bengali-git/bengali.ai/models/mobilenet_v2-b0353104.pth
+=======
+    PRETRAINED_PATH: C:\Users\mingy\Documents\ml_data\torchvision_models\mobilenet_v2-b0353104.pth
+    RGB: true
+    LOAD_FIRST_BLOCK: true
+>>>>>>> DevYang
   HEAD:
     NAME: simple_head
     ACTIVATION: leaky_relu
@@ -55,6 +81,7 @@ MODEL:
     - 11
     - 7
   SOLVER:
+<<<<<<< HEAD
     LABELS_WEIGHTS_PATH: C:/Users/nasty/data-science/kaggle/bengali/data/interim/labels_weights.p
     OHEM_RATE: 1
     MIXUP_AUGMENT: true
@@ -75,3 +102,29 @@ MODEL:
 
 OUTPUT_PATH: C:/Users/nasty/data-science/kaggle/bengali-git/bengali.ai/models
 RESUME_PATH: ''
+=======
+    TOTAL_EPOCHS: 40
+    OPTIMIZER:
+      BASE_LR: 0.001
+      NAME: adam
+      SGD:
+        MOMENTUM: 0.9
+        NESTEROV: false
+    SCHEDULER:
+      NAME: 'unchanged'
+      LR_REDUCE_GAMMA: 0.1
+      MULTI_STEPS_LR_MILESTONES: []
+    MIXUP_AUGMENT: false
+    MIXUP:
+      MIXUP_ALPHA: 0.4
+      CUTMIX_ALPHA: 1.0
+      CUTMIX_PROB: 0.0
+    AMP: false
+    LOSS:
+      LABELS_WEIGHTS_PATH: C:/Users/mingy/Documents/ml_data/bengali/labels_weights.p
+      NAME: xentropy
+      OHEM_RATE: 1.0
+OUTPUT_PATH: ''
+RESUME_PATH: ''
+MULTI_GPU_TRAINING: false
+>>>>>>> DevYang

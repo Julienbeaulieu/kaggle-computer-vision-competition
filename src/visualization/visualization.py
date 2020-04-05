@@ -1,8 +1,10 @@
+from typing import List
 import numpy as np
 from matplotlib import pyplot as plt
+import random
 
 
-def vis_square(data):
+def vis_square(data, base_size=10):
     """
     Gallery visualizer.
     Take an array of shape (n, height, width) or (n, height, width, 3) and visualize each (height, width) thing in a grid of size approx. sqrt(n) by sqrt(n)
@@ -28,7 +30,7 @@ def vis_square(data):
 
     data = data.reshape((n * data.shape[1], n * data.shape[3]) + data.shape[4:])
 
-    fig_size = int(10 / 8 * n)
+    fig_size = int(base_size / 8 * n)
 
     plt.figure(figsize=(fig_size, fig_size))
 
@@ -38,3 +40,30 @@ def vis_square(data):
         plt.imshow(data)
 
     plt.show()
+
+
+def visualize_class_imgs(data_list: List, grapheme_cls: int = None, vowel_cls: int = None, consonant_cls: int = None,
+                         display_num=25):
+    """
+
+    :param data_list: list of (img, label) pairs
+    :param grapheme_cls:
+    :param vowel_cls:
+    :param consonant_cls:
+    :param display_num: number of random images to be displayed
+    :return:
+    """
+
+    if grapheme_cls is not None:
+        data_list = [x for x in data_list if x[1][0] == grapheme_cls]
+
+    if vowel_cls is not None:
+        data_list = [x for x in data_list if x[1][1] == vowel_cls]
+
+    if vowel_cls is not None:
+        data_list = [x for x in data_list if x[1][2] == consonant_cls]
+
+    random.shuffle(data_list)
+
+    imgs = np.array([x[0] for x in data_list[:display_num]])
+    vis_square(imgs)

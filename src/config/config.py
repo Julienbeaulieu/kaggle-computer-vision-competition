@@ -1,30 +1,37 @@
-from yacs.config import CfgNode as ConfigurationNode
+import os
+import warnings
 
-# YACS overwrite these settings using YAML
+from dotenv import find_dotenv, load_dotenv
+from yacs.config import CfgNode as ConfigurationNode
+from pathlib import Path
+
+# YACS overwrite these settings using YAML, all YAML variables MUST BE defined here first
+# as this is the master list of ALL attributes.
+
 __C = ConfigurationNode()
 
 # importing default as a global singleton
 cfg = __C
-
-# bengaliai image sizes and class numbers
+__C.DESCRIPTION = 'Default config from the Singleton'
 __C.DATASET = ConfigurationNode()
 __C.DATASET.NAME = 'bengali_kaggle'
 __C.DATASET.DEFAULT_SIZE = (137, 236)
 __C.DATASET.RESIZE_SHAPE = (128, 128)
+__C.DATASET.WHITE_BACKGROUND = True
 __C.DATASET.CONCENTRATE_CROP = True
+__C.DATASET.PAD_TO_SQUARE = False
 __C.DATASET.GRAPHEME_SIZE = 168
 __C.DATASET.VOWEL_SIZE = 11
 __C.DATASET.CONSONANT_SIZE = 7
+__C.DATASET.USE_FOLDS_DATA = False
+__C.DATASET.VALIDATION_FOLD = 4
+__C.DATASET.FOLDS_PATH = ''
+__C.DATASET.TRAIN_DATA_PATH = 'C:/Users/mingy/Documents/ml_data/bengali/train_data.p'
+__C.DATASET.VAL_DATA_PATH = 'C:/Users/mingy/Documents/ml_data/bengali/val_data.p'
 
-# training and validation set paths
-__C.DATASET.TRAIN_DATA_PATH = 'C:/Users/nasty/data-science/kaggle/bengali/data/interim/train_data.p'
-__C.DATASET.VAL_DATA_PATH = 'C:/Users/nasty/data-science/kaggle/bengali/data/interim/val_data.p'
-__C.DATASET.TRAIN_DATA_SAMPLE = 'C:/Users/nasty/data-science/kaggle/bengali/data/interim/train_data_sample.p'
-__C.DATASET.VALID_DATA_SAMPLE = 'C:/Users/nasty/data-science/kaggle/bengali/data/interim/train_data_sample.p'
-__C.DATASET.ALL_DATA = 'C:/Users/nasty/data-science/kaggle/bengali/data/interim/all_data.p'
+# augmix related parameters
+__C.DATASET.DO_AUGMIX = False
 
-
-# data augmentation parameters with albumentations library
 __C.DATASET.AUGMENTATION = ConfigurationNode()
 __C.DATASET.AUGMENTATION.BLURRING_PROB = 0.25
 __C.DATASET.AUGMENTATION.GAUSS_NOISE_PROB = 0.25
@@ -34,24 +41,27 @@ __C.DATASET.AUGMENTATION.BRIGHTNESS_CONTRAST_PROB = 0.5
 __C.DATASET.AUGMENTATION.GRID_DISTORTION_PROB = 0.5
 __C.DATASET.AUGMENTATION.ROTATION_PROB = 0.5
 __C.DATASET.AUGMENTATION.ROTATION_DEGREE = 20
+__C.DATASET.AUGMENTATION.GRID_MASK_PROB = 0.0
+__C.DATASET.AUGMENTATION.HORIZONTAL_FLIP_PROB = 0.0
 __C.DATASET.AUGMENTATION.CUTOUT_PROB = 0.4
-__C.DATASET.AUGMENTATION.HEIGHT = 128
-__C.DATASET.AUGMENTATION.WIDTH = 128
-
-__C.DATASET.BATCH_SIZE = 64
+__C.DATASET.BATCH_SIZE = 32
 __C.DATASET.CPU_NUM = 1
 __C.DATASET.TO_RGB = True
 __C.DATASET.NORMALIZE_MEAN = [0.485, 0.456, 0.406]
 __C.DATASET.NORMALIZE_STD = [0.229, 0.224, 0.225]
+__C.DATASET.FOCUS_CLASS = []
 
 __C.MODEL = ConfigurationNode()
+
+__C.MODEL.PARALLEL = False
 __C.MODEL.META_ARCHITECTURE = 'baseline'
 __C.MODEL.NORMALIZATION_FN = 'BN'
 
 __C.MODEL.BACKBONE = ConfigurationNode()
-__C.MODEL.BACKBONE.NAME = 'mobilenet_v2' # 
+__C.MODEL.BACKBONE.NAME = 'mobilenet_v2'
 __C.MODEL.BACKBONE.RGB = True
-__C.MODEL.BACKBONE.PRETRAINED_PATH = 'C:/Users/nasty/data-science/kaggle/bengali-git/bengali.ai/models/mobilenet_v2-b0353104.pth'
+__C.MODEL.BACKBONE.PRETRAINED_PATH = r'C:\Git\bengali.ai\models\mobilenet_v2-b0353104.pth'
+__C.MODEL.BACKBONE.LOAD_FIRST_BLOCK = True
 
 
 __C.MODEL.HEAD = ConfigurationNode()
@@ -64,26 +74,45 @@ __C.MODEL.HEAD.BN = True
 __C.MODEL.HEAD.DROPOUT = -1.0
 
 __C.MODEL.SOLVER = ConfigurationNode()
-__C.MODEL.SOLVER.LABELS_WEIGHTS_PATH = 'C:/Users/nasty/data-science/kaggle/bengali/data/interim/labels_weights.p'
-
 __C.MODEL.SOLVER.OPTIMIZER = ConfigurationNode()
-__C.MODEL.SOLVER.OPTIMIZER.NAME = 'adam'
 __C.MODEL.SOLVER.OPTIMIZER.BASE_LR = 0.001
+__C.MODEL.SOLVER.OPTIMIZER.NAME = 'adam'
 
-# scheduler config - 2 different types of schedulers are possible - OneCyleLR and ReduceLROnPlateau
+# sgd config
+__C.MODEL.SOLVER.OPTIMIZER.SGD = ConfigurationNode()
+__C.MODEL.SOLVER.OPTIMIZER.SGD.MOMENTUM = 0.9
+__C.MODEL.SOLVER.OPTIMIZER.SGD.NESTEROV = False
+
 __C.MODEL.SOLVER.SCHEDULER = ConfigurationNode()
-__C.MODEL.SOLVER.SCHEDULER.NAME = 'OneCycleLR'
-__C.MODEL.SOLVER.SCHEDULER.TOTAL_EPOCHS = 40
+__C.MODEL.SOLVER.SCHEDULER.NAME = 'unchange'
+__C.MODEL.SOLVER.SCHEDULER.LR_REDUCE_GAMMA = 0.1
+__C.MODEL.SOLVER.SCHEDULER.MULTI_STEPS_LR_MILESTONES = []
+
 # OneCycleLR hyperparams
 __C.MODEL.SOLVER.SCHEDULER.PCT_START = 0.5
 __C.MODEL.SOLVER.SCHEDULER.ANNEAL_STRATEGY = 'cos'
 __C.MODEL.SOLVER.SCHEDULER.DIV_FACTOR = 30
 __C.MODEL.SOLVER.SCHEDULER.MAX_LR = 0.01
-# ReduceLROnPlateau hyperparams
-__C.MODEL.SOLVER.SCHEDULER.LR_REDUCE_GAMMA = 0.1
-# This is to fix a bug related to progressive resizing
-__C.MODEL.SOLVER.SCHEDULER.PROG_RESIZE = False
 
+__C.MODEL.SOLVER.TOTAL_EPOCHS = 40
+__C.MODEL.SOLVER.AMP = False
+
+__C.MODEL.SOLVER.MIXUP_AUGMENT = False
+__C.MODEL.SOLVER.MIXUP = ConfigurationNode()
+__C.MODEL.SOLVER.MIXUP.CUTMIX_ALPHA = 1.0
+__C.MODEL.SOLVER.MIXUP.MIXUP_ALPHA = 0.4
+__C.MODEL.SOLVER.MIXUP.CUTMIX_PROB = 0.0
+
+__C.MODEL.SOLVER.LOSS = ConfigurationNode()
+
+__C.MODEL.SOLVER.LOSS.OHEM_RATE = 1.0
+__C.MODEL.SOLVER.LOSS.NAME = 'xentropy'
+__C.MODEL.SOLVER.LOSS.LABELS_WEIGHTS_PATH = 'C:/Users/mingy/Documents/ml_data/bengali/labels_weights.p'
+
+# focal loss related
+__C.MODEL.SOLVER.LOSS.FOCAL_LOSS = ConfigurationNode()
+__C.MODEL.SOLVER.LOSS.FOCAL_LOSS.GAMMA = 1
+__C.MODEL.SOLVER.LOSS.FOCAL_LOSS.ALPHA = -1
 
 #__C.MODEL.SOLVER.LABELS_WEIGHTS_PATH = 'C:/Users/nasty/data-science/kaggle/bengali/data/interim/labels_weights.p'
 __C.MODEL.SOLVER.MIXUP_AUGMENT = True
@@ -100,6 +129,8 @@ __C.MODEL.SOLVER.LOSS.OHEM_RATE = 1.0
 
 __C.OUTPUT_PATH = 'C:/Users/nasty/data-science/kaggle/bengali-git/bengali.ai/models'
 __C.RESUME_PATH = ''
+__C.MULTI_GPU_TRAINING = False
+
 
 def get_cfg_defaults():
   """
@@ -188,5 +219,3 @@ def update_cfg_using_dotenv() -> list:
         path_overwrite_keys.append(value)
 
     return path_overwrite_keys
-
-
