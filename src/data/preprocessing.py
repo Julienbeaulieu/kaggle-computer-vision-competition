@@ -6,7 +6,7 @@ from albumentations import OneOf, Compose, MotionBlur, MedianBlur, Blur, RandomB
 from .grid_mask import GridMask
 from typing import Union, List, Tuple
 from .augmix import augmentations, augment_and_mix
-
+import cv2
 from cv2 import resize
 import torch
 
@@ -51,8 +51,6 @@ def pad_to_square(img: ndarray, white_background: bool):
     else:
         constant_pad = 0
     img = np.pad(img, [((l - ly) // 2,), ((l - lx) // 2,)], mode='constant', constant_values=constant_pad)
-    return img
-
     return img
 
 class Preprocessor(object):

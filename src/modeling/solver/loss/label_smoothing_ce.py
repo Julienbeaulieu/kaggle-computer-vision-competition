@@ -3,6 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from typing import List, Dict, Union
 from yacs.config import CfgNode
+from .jenson_shannon_divergence import jensen_shannon_divergence
 from .build import LOSS_REGISTRY
 
 
@@ -28,7 +29,7 @@ class LabelSmoothingCrossEntropy(torch.nn.Module):
 
 
 @LOSS_REGISTRY.register('label_smoothing_ce')
-class SoftmaxCE(torch.nn.Module):
+class LabSmoothSoftmaxCE(torch.nn.Module):
     """
     Normal softmax cross entropy with added functionality
     """
@@ -37,7 +38,7 @@ class SoftmaxCE(torch.nn.Module):
         """
         :param weights: class weights
         """
-        super(SoftmaxCE, self).__init__()
+        super(LabSmoothSoftmaxCE, self).__init__()
         self.ohem_rate = loss_cfg.OHEM_RATE
         self.do_mixup = do_mixup
         self.eps = loss_cfg.EPS
@@ -46,8 +47,14 @@ class SoftmaxCE(torch.nn.Module):
         self.loss_fn = LabelSmoothingCrossEntropy(loss_cfg, self.eps, self.reduction)
         #self.loss_fn = CrossEntropy()
 
-    def forward(self, logits, labels):
-        loss = 0
+    def forward(self, logits, labels, js_divergence=False):
+        
+        if js_divergence:
+            logits, logits_aug1, logits_aug2 = torch.chunk(logits, 3, dim=0)
+            loss = jensen_shannon_divergence(logits, logits_aug1, logits_aug2)
+        else:
+            loss = 0
+
         preds = torch.argmax(logits.float(), dim=1)
         if self.do_mixup:
             losses = self.compute_mixup_loss(logits, labels)

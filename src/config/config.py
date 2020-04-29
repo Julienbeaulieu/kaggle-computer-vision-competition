@@ -26,8 +26,10 @@ __C.DATASET.CONSONANT_SIZE = 7
 __C.DATASET.USE_FOLDS_DATA = False
 __C.DATASET.VALIDATION_FOLD = 4
 __C.DATASET.FOLDS_PATH = ''
-__C.DATASET.TRAIN_DATA_PATH = 'C:/Users/mingy/Documents/ml_data/bengali/train_data.p'
-__C.DATASET.VAL_DATA_PATH = 'C:/Users/mingy/Documents/ml_data/bengali/val_data.p'
+__C.DATASET.TRAIN_DATA_PATH = 'C:/Users/nasty/data-science/kaggle/bengali/data/interim/train_data.p'
+__C.DATASET.VAL_DATA_PATH = 'C:/Users/nasty/data-science/kaggle/bengali/data/interim/val_data.p'
+__C.DATASET.TRAIN_DATA_SAMPLE = 'C:/Users/nasty/data-science/kaggle/bengali/data/interim/train_data_sample.p'
+__C.DATASET.VALID_DATA_SAMPLE = 'C:/Users/nasty/data-science/kaggle/bengali/data/interim/train_data_sample.p'
 
 # augmix related parameters
 __C.DATASET.DO_AUGMIX = False
@@ -44,6 +46,8 @@ __C.DATASET.AUGMENTATION.ROTATION_DEGREE = 20
 __C.DATASET.AUGMENTATION.GRID_MASK_PROB = 0.0
 __C.DATASET.AUGMENTATION.HORIZONTAL_FLIP_PROB = 0.0
 __C.DATASET.AUGMENTATION.CUTOUT_PROB = 0.4
+__C.DATASET.AUGMENTATION.HEIGHT = 128
+__C.DATASET.AUGMENTATION.WIDTH = 128
 __C.DATASET.BATCH_SIZE = 32
 __C.DATASET.CPU_NUM = 1
 __C.DATASET.TO_RGB = True
@@ -60,7 +64,7 @@ __C.MODEL.NORMALIZATION_FN = 'BN'
 __C.MODEL.BACKBONE = ConfigurationNode()
 __C.MODEL.BACKBONE.NAME = 'mobilenet_v2'
 __C.MODEL.BACKBONE.RGB = True
-__C.MODEL.BACKBONE.PRETRAINED_PATH = r'C:\Git\bengali.ai\models\mobilenet_v2-b0353104.pth'
+__C.MODEL.BACKBONE.PRETRAINED_PATH = 'C:/Users/nasty/data-science/kaggle/bengali-git/bengali.ai/models/mobilenet_v2-b0353104.pth'
 __C.MODEL.BACKBONE.LOAD_FIRST_BLOCK = True
 
 
@@ -74,6 +78,7 @@ __C.MODEL.HEAD.BN = True
 __C.MODEL.HEAD.DROPOUT = -1.0
 
 __C.MODEL.SOLVER = ConfigurationNode()
+__C.MODEL.SOLVER.LABELS_WEIGHTS_PATH = 'C:/Users/nasty/data-science/kaggle/bengali/data/interim/labels_weights.p'
 __C.MODEL.SOLVER.OPTIMIZER = ConfigurationNode()
 __C.MODEL.SOLVER.OPTIMIZER.BASE_LR = 0.001
 __C.MODEL.SOLVER.OPTIMIZER.NAME = 'adam'
@@ -104,10 +109,11 @@ __C.MODEL.SOLVER.MIXUP.MIXUP_ALPHA = 0.4
 __C.MODEL.SOLVER.MIXUP.CUTMIX_PROB = 0.0
 
 __C.MODEL.SOLVER.LOSS = ConfigurationNode()
-
 __C.MODEL.SOLVER.LOSS.OHEM_RATE = 1.0
 __C.MODEL.SOLVER.LOSS.NAME = 'xentropy'
-__C.MODEL.SOLVER.LOSS.LABELS_WEIGHTS_PATH = 'C:/Users/mingy/Documents/ml_data/bengali/labels_weights.p'
+__C.MODEL.SOLVER.LOSS.EPS = 0.1
+__C.MODEL.SOLVER.LOSS.REDUCTION = 'mean'
+__C.MODEL.SOLVER.LOSS.LABELS_WEIGHTS_PATH = 'C:/Users/nasty/data-science/kaggle/bengali/data/interim/labels_weights.p'
 
 # focal loss related
 __C.MODEL.SOLVER.LOSS.FOCAL_LOSS = ConfigurationNode()
@@ -130,6 +136,7 @@ __C.MODEL.SOLVER.LOSS.OHEM_RATE = 1.0
 __C.OUTPUT_PATH = 'C:/Users/nasty/data-science/kaggle/bengali-git/bengali.ai/models'
 __C.RESUME_PATH = ''
 __C.MULTI_GPU_TRAINING = False
+__C.DEBUG = False
 
 
 def get_cfg_defaults():
