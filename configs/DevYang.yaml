@@ -1,13 +1,6 @@
+DESCRIPTION: 'Reduced batch size to 512. Disabled multiple GPU'
 DATASET:
   NAME: bengali_kaggle
-  TRAIN_DATA_PATH: C:\Git\bengali.ai\data\interim\train_data.p
-  VAL_DATA_PATH: C:\Git\bengali.ai\data\interim\val_data.p
-  DEFAULT_SIZE:
-  - 137
-  - 236
-  GRAPHEME_SIZE: 168
-  VOWEL_SIZE: 11
-  CONSONANT_SIZE: 7
   AUGMENTATION:
     BLURRING_PROB: 0.25
     BRIGHTNESS_CONTRAST_PROB: 1
@@ -17,7 +10,7 @@ DATASET:
     ROTATION_PROB: 1
   CONCENTRATE_CROP: true
   BATCH_SIZE: 32
-  CPU_NUM: 4
+  CPU_NUM: 1
   NORMALIZE_MEAN:
   - 0.485
   - 0.456
@@ -30,12 +23,14 @@ DATASET:
   RESIZE_SHAPE:
   - 128
   - 128
+  FOCUS_CLASS: []
 MODEL:
+  PARALLEL: false
   META_ARCHITECTURE: baseline
   NORMALIZATION_FN: BN
   BACKBONE:
     NAME: mobilenet_v2
-    PRETRAINED_PATH: C:\Git\bengali.ai\models\mobilenet_v2-b0353104.pth
+    RGB: true
   HEAD:
     NAME: simple_head
     ACTIVATION: leaky_relu
@@ -45,15 +40,11 @@ MODEL:
     - 512
     - 256
     INPUT_DIM: 1280
-    OUTPUT_DIMS:
-    - 168
-    - 11
-    - 7
   SOLVER:
-    LABELS_WEIGHTS_PATH: C:\Git\bengali.ai\data\interim\labels_weights.p
     TOTAL_EPOCHS: 40
     OPTIMIZER: adam
     BASE_LR: 0.001
-    LOSS_FN: xentropy
-OUTPUT_PATH: ''
-RESUME_PATH: ''
+    AMP: false
+    LOSS:
+      NAME: xentropy
+      OHEM_RATE: 1.0

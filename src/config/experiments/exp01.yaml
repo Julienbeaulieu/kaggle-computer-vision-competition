@@ -1,6 +1,15 @@
 
+DEBUG: True
 MODEL:
+  BACKBONE:
+    NAME: se_resnext50
+  HEAD:
+    NAME: simple_head_kaiming
+    INPUT_DIM: 2048
+
+    HIDDEN_DIMS: [500, 400, 300, 200]
   SOLVER: 
-    SCHEDULER:
-      TOTAL_EPOCHS: 1
+    TOTAL_EPOCHS: 1
+    LOSS:
+      NAME: label_smoothing_ce
 

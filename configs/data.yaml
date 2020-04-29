@@ -1,0 +1,10 @@
+# DATASET:
+#   TRAIN_DATA_PATH: '/dataext/ming_data/bengali/train_data.p'
+#   VAL_DATA_PATH: '/dataext/ming_data/bengali/val_data.p'
+#   FOLDS_PATH: '/dataext/ming_data/bengali/all_data_5_splits.p'
+# MODEL:
+#   BACKBONE:
+#     PRETRAINED_PATH: '/dataext/ming_data/torch_models/mobilenet_v2-b0353104.pth'
+#   SOLVER:
+#     LOSS:
+#       LABELS_WEIGHTS_PATH: '/dataext/ming_data/bengali/labels_weights.p'

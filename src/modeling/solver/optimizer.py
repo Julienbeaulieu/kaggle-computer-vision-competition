@@ -2,30 +2,51 @@ import torch
 from torch.optim.optimizer import Optimizer
 from torch.optim.lr_scheduler import OneCycleLR, ReduceLROnPlateau
 from yacs.config import CfgNode
+from typing import Union
 
 def build_optimizer(model: torch.nn.Module, opti_cfg: CfgNode) -> Optimizer:
     """
     simple optimizer builder
     :param model: already gpu pushed model
-    :param solver_cfg:  config node
+    :param opti_cfg:  config node
     :return: the optimizer
     """
     parameters = model.parameters()
-    optimzers = {
-        'adam': torch.optim.Adam,
-        'sgd': torch.optim.SGD
-    }
     opti_type = opti_cfg.NAME
     lr = opti_cfg.BASE_LR
-    return optimzers[opti_type](parameters, lr=lr)
+    if opti_type == 'adam':
+        optimizer = torch.optim.Adam(parameters, lr=lr)
+    elif opti_type == 'sgd':
+        sgd_cfg = opti_cfg.SGD
+        momentum = sgd_cfg.MOMENTUM
+        nesterov = sgd_cfg.NESTEROV
+        optimizer = torch.optim.SGD(parameters, lr=lr, momentum=momentum, nesterov=nesterov)
+    else:
+        raise Exception('invalid optimizer, available choices adam/sgd')
+    return optimizer
 
-def build_scheduler(optimizer: torch.optim, scheduler_cfg: CfgNode, epochs, steps_per_epoch):
+
+def build_scheduler(optimizer: Optimizer, scheduler_cfg: CfgNode):
     """
-    OneCycleLR:    https://arxiv.org/abs/1708.07120
+
+    :param optimizer:
+    :param optimizer: Optimizer
+    :param scheduler_cfg:
+    "param solver_cfg: CfgNode
+    :return:
     """
     scheduler_type = scheduler_cfg.NAME
     if scheduler_type == 'unchange':
-        return None    
+        return None
+    elif scheduler_type == 'multi_steps':
+        gamma = scheduler_cfg.LR_REDUCE_GAMMA
+        milestones = scheduler_cfg.MULTI_STEPS_LR_MILESTONES
+        scheduler = MultiStepLR(optimizer, milestones, gamma=gamma, last_epoch=-1)
+        return scheduler
+    elif scheduler_type == 'reduce_on_plateau':
+        gamma = scheduler_cfg.LR_REDUCE_GAMMA
+        scheduler = ReduceLROnPlateau(optimizer, patience=5, factor=gamma)
+        return scheduler
     elif scheduler_type == 'OneCycleLR':
         scheduler = OneCycleLR(optimizer, 
                                max_lr=scheduler_cfg.MAX_LR, 
@@ -36,9 +57,5 @@ def build_scheduler(optimizer: torch.optim, scheduler_cfg: CfgNode, epochs, step
                                div_factor=scheduler_cfg.DIV_FACTOR,
                                cycle_momentum=True)
         return scheduler
-    elif scheduler_type == 'ReduceLROnPlateau':
-        gamma = scheduler_cfg.LR_REDUCE_GAMMA
-        scheduler = ReduceLROnPlateau(optimizer, patience=5, factor=gamma)
-        return scheduler
     else:
-        raise Exception('scheduler name invalid, choices are: unchange/OneCycleLR/ReduceLROnPlatea')
+        raise Exception('scheduler name invalid, choices are unchange/multi_steps/reduce_on_plateau/OneCycleLR')

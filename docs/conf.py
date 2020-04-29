@@ -38,7 +38,7 @@ source_suffix = '.rst'
 # source_encoding = 'utf-8-sig'
 
 # The master toctree document.
-master_doc = 'index'
+master_doc = 'input_index'
 
 # General information about the project.
 project = u'Bengali.AI'
@@ -83,7 +83,7 @@ exclude_patterns = ['_build']
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = 'sphinx'
 
-# A list of ignored prefixes for module index sorting.
+# A list of ignored prefixes for module input_index sorting.
 # modindex_common_prefix = []
 
 
@@ -137,13 +137,13 @@ html_static_path = ['_static']
 # template names.
 # html_additional_pages = {}
 
-# If false, no module index is generated.
+# If false, no module input_index is generated.
 # html_domain_indices = True
 
-# If false, no index is generated.
+# If false, no input_index is generated.
 # html_use_index = True
 
-# If true, the index is split into individual pages for each letter.
+# If true, the input_index is split into individual pages for each letter.
 # html_split_index = False
 
 # If true, links to the reST sources are added to the pages.
@@ -183,7 +183,7 @@ latex_elements = {
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title, author, documentclass [howto/manual]).
 latex_documents = [
-    ('index',
+    ('input_index',
      'bengali.ai.tex',
      u'Bengali.AI Documentation',
      u"CVNNIG", 'manual'),
@@ -206,7 +206,7 @@ latex_documents = [
 # Documents to append as an appendix to all manuals.
 # latex_appendices = []
 
-# If false, no module index is generated.
+# If false, no module input_index is generated.
 # latex_domain_indices = True
 
 
@@ -215,7 +215,7 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    ('index', 'bengali.ai', u'Bengali.AI Documentation',
+    ('input_index', 'bengali.ai', u'Bengali.AI Documentation',
      [u"CVNNIG"], 1)
 ]
 
@@ -229,7 +229,7 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-    ('index', 'bengali.ai', u'Bengali.AI Documentation',
+    ('input_index', 'bengali.ai', u'Bengali.AI Documentation',
      u"CVNNIG", 'Bengali.AI',
      'This is the combined effort to build a pipeline in PyTorch to attempt Kaggle competition for Bengali.AI', 'Miscellaneous'),
 ]
@@ -237,7 +237,7 @@ texinfo_documents = [
 # Documents to append as an appendix to all manuals.
 # texinfo_appendices = []
 
-# If false, no module index is generated.
+# If false, no module input_index is generated.
 # texinfo_domain_indices = True
 
 # How to display URL addresses: 'footnote', 'no', or 'inline'.

@@ -1,12 +1,14 @@
-import torch  
+import torch
 from typing import List, Dict, Union
 from yacs.config import CfgNode
+from .jenson_shannon_divergence import jensen_shannon_divergence
 from .build import LOSS_REGISTRY
+
 
 @LOSS_REGISTRY.register('xentropy')
 class SoftmaxCE(torch.nn.Module):
     """
-    Normal softmax cross entropy with added functionality
+    Normal softmax cross entropy
     """
 
     def __init__(self, loss_cfg: CfgNode, do_mixup: bool, weights: List, **kwargs):
@@ -20,10 +22,16 @@ class SoftmaxCE(torch.nn.Module):
         if weights is not None:
             self.loss_fn = torch.nn.CrossEntropyLoss(torch.tensor(weights), reduction='none')
         else:
-            self.loss_fn = torch.nn.CrossEntropyLoss(reduction='None')
+            self.loss_fn = torch.nn.CrossEntropyLoss(reduction='none')
 
-    def forward(self, logits, labels):
-        loss = 0
+    def forward(self, logits, labels, js_divergence=False):
+
+        if js_divergence:
+            logits, logits_aug1, logits_aug2 = torch.chunk(logits, 3, dim=0)
+            loss = jensen_shannon_divergence(logits, logits_aug1, logits_aug2)
+        else:
+            loss = 0
+
         preds = torch.argmax(logits.float(), dim=1)
         if self.do_mixup:
             losses = self.compute_mixup_loss(logits, labels)
@@ -45,7 +53,7 @@ class SoftmaxCE(torch.nn.Module):
 
         :param logits: computed logits
         :param mixedup_labels_data:
-        :return: 
+        :return:
         """
         labels, shuffled_labels, lam = mixedup_labels_data
         loss = lam * self.loss_fn(logits, labels) + (1 - lam) * self.loss_fn(logits, shuffled_labels)
@@ -57,4 +65,3 @@ class SoftmaxCE(torch.nn.Module):
         ohem_losses, _ = losses.topk(keep_size)
         loss = ohem_losses.mean()
         return loss
-

@@ -14,8 +14,6 @@ import pandas as pd
 
 
 load_dotenv(find_dotenv())
-PATH_DATA_RAW = Path(os.getenv("PATH_DATA_RAW"))
-PATH_DATA_INTERIM = Path(os.getenv("PATH_DATA_INTERIM"))
 
 # Template train data image file variable to be updated. i.e. the ID part
 TRAIN_PARQUET_FORM = 'train_image_data_ID.parquet'
@@ -36,12 +34,18 @@ def train2image(vector_image: pd.DataFrame):
 
 
 
-def load_images(train_test, indices=['0', '1', '2', '3']):
+def load_images(train_test, indices=None):
     """
     Utility function to Load the images from both the location and return them
     :param train_test:
     :return:
     """
+    PATH_DATA_RAW = Path(os.getenv("PATH_DATA_RAW"))
+
+
+    # Handle default values.
+    if indices is None:
+        indices = ['0', '1', '2', '3']
 
     # ???
     path_form = {
@@ -76,6 +80,7 @@ def load_labels():
     Utility function to load the labels from CSV and dump to numpy memory variables.
     :return:
     """
+    PATH_DATA_RAW = Path(os.getenv("PATH_DATA_RAW"))
     labels = pd.read_csv(PATH_DATA_RAW / LABEL_PATH)
     labels = labels.iloc[:, 1:4].to_numpy()
     return labels
@@ -85,6 +90,7 @@ def dump_image_labels(train_test, indices=['0', '1', '2', '3']):
      A combined function to load both train and label?
     :return:
     """
+    PATH_DATA_INTERIM = Path(os.getenv("PATH_DATA_INTERIM"))
     # Load all images into a variable.
     imgs = load_images(train_test, indices=indices)
 
@@ -100,6 +106,7 @@ def split_train_test():
     Shuffle split the train and test sets and save them to separate files in the interim path.
     :return:
     """
+    PATH_DATA_INTERIM = Path(os.getenv("PATH_DATA_INTERIM"))
     all_data = dump_image_labels()
     _ = random.shuffle(all_data)
     data_size = len(all_data)
