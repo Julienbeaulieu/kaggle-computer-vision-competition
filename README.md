@@ -5,6 +5,8 @@ This is the combined effort to build a pipeline in PyTorch to attempt Kaggle com
 
 In this competition, we are given the images of a handwritten Bengali grapheme and are challenged to separately classify three constituent elements in the image: grapheme root, vowel diacritics, and consonant diacritics. 
 
+Project writeup: https://julienbeaulieu.github.io/2020/03/16/building-a-flexible-configuration-system-for-deep-learning-models/
+
 Implementation Highlights
 ------------
 YAML config files, Mixup & albumentation library augmentations, label smoothing, OHEM, label weights for class imbalance, progressive resizing, OneCycleLR, Tensorboard. 
